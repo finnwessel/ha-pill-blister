@@ -1,0 +1,14 @@
+{
+  "domain": "pill_blister",
+  "name": "Pill Blister",
+  "after_dependencies": ["lovelace"],
+  "codeowners": ["@finnwessel"],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/finnwessel/ha-pill-blister",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/finnwessel/ha-pill-blister/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

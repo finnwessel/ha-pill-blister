@@ -1,0 +1,383 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pill Blister",
+        "description": "Set up the blister. Take the intake window from the package leaflet: how much earlier or later an intake still counts for its day.",
+        "data": {
+          "name": "Name",
+          "dose_time": "Intake time",
+          "blister_start": "Start of the current blister",
+          "person": "Person (optional)",
+          "cycle_on": "Intake days",
+          "cycle_off": "Pause days",
+          "window_before": "Window before intake time",
+          "window_after": "Window after intake time",
+          "on_time": "On time up to"
+        },
+        "data_description": {
+          "name": "Whose pill. Entities are called “[name] Pill …”.",
+          "dose_time": "The time the pill is usually taken.",
+          "blister_start": "Day pill 1 of the current blister was taken.",
+          "person": "Passed along in events, e.g. for notifications.",
+          "window_before": "An intake this much earlier still counts for that day.",
+          "window_after": "An intake this much later still counts for that day, also after midnight. Outside every window you are asked which day it belongs to.",
+          "on_time": "Deviation that still counts as on time (only for display)."
+        }
+      },
+      "missed": {
+        "title": "Missed pill (package leaflet)",
+        "description": "Enter what your package leaflet says. Nothing is pre-filled: the integration only shows notices based on these rules and never states that protection exists.",
+        "data": {
+          "missed_after": "Missed after",
+          "week1_days": "Week 1: extra contraception (days)",
+          "week1_text": "Week 1: what to do",
+          "week2_days": "Week 2: extra contraception (days)",
+          "week2_text": "Week 2: what to do",
+          "week3_days": "Week 3: extra contraception (days)",
+          "week3_text": "Week 3: what to do",
+          "multi_days": "Several missed in one blister: extra contraception (days)",
+          "multi_text": "Several missed: what to do"
+        },
+        "data_description": {
+          "missed_after": "Hours after the intake time from which a pill counts as missed (later or not at all).",
+          "week1_days": "0 = no notice.",
+          "week2_days": "0 = no notice.",
+          "week3_days": "0 = no notice.",
+          "multi_days": "Optional; empty = week rule applies."
+        }
+      },
+      "illness": {
+        "title": "Vomiting, diarrhoea & co.",
+        "description": "Optional: events that can make a pill ineffective. Leave the name empty to finish.",
+        "data": {
+          "illness_name": "Name",
+          "within_hours": "Within … after intake",
+          "replacement_hours": "Replacement pill possible until",
+          "outcome": "Without replacement pill",
+          "backup_days": "Own rule: extra contraception (days)",
+          "text": "What to do",
+          "add_another": "Add another"
+        },
+        "data_description": {
+          "illness_name": "e.g. Vomiting, Severe diarrhoea.",
+          "within_hours": "An event up to this many hours after the intake affects the pill.",
+          "replacement_hours": "Hours after the intake until which a replacement pill cancels the event. 0 = not possible.",
+          "backup_days": "Only for “own rule”."
+        }
+      }
+    },
+    "error": {
+      "window_too_long": "Window before and after together must be shorter than 24 hours.",
+      "required": "Required."
+    },
+    "abort": {
+      "already_configured": "This person is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pill Blister",
+        "menu_options": {
+          "general": "General",
+          "missed": "Missed pill",
+          "add_illness": "Add event",
+          "remove_illness": "Remove event"
+        }
+      },
+      "general": {
+        "title": "General",
+        "description": "Intake time and blister start are changed with their entities.",
+        "data": {
+          "person": "Person (optional)",
+          "cycle_on": "Intake days",
+          "cycle_off": "Pause days",
+          "window_before": "Window before intake time",
+          "window_after": "Window after intake time",
+          "on_time": "On time up to"
+        },
+        "data_description": {
+          "person": "Passed along in events, e.g. for notifications.",
+          "window_before": "An intake this much earlier still counts for that day.",
+          "window_after": "An intake this much later still counts for that day, also after midnight. Outside every window you are asked which day it belongs to.",
+          "on_time": "Deviation that still counts as on time (only for display)."
+        }
+      },
+      "missed": {
+        "title": "Missed pill (package leaflet)",
+        "description": "Enter what your package leaflet says. Nothing is pre-filled: the integration only shows notices based on these rules and never states that protection exists.",
+        "data": {
+          "missed_after": "Missed after",
+          "week1_days": "Week 1: extra contraception (days)",
+          "week1_text": "Week 1: what to do",
+          "week2_days": "Week 2: extra contraception (days)",
+          "week2_text": "Week 2: what to do",
+          "week3_days": "Week 3: extra contraception (days)",
+          "week3_text": "Week 3: what to do",
+          "multi_days": "Several missed in one blister: extra contraception (days)",
+          "multi_text": "Several missed: what to do"
+        },
+        "data_description": {
+          "missed_after": "Hours after the intake time from which a pill counts as missed (later or not at all).",
+          "week1_days": "0 = no notice.",
+          "week2_days": "0 = no notice.",
+          "week3_days": "0 = no notice.",
+          "multi_days": "Optional; empty = week rule applies."
+        }
+      },
+      "add_illness": {
+        "title": "Add event",
+        "description": "An event that can make a pill ineffective, as described in the package leaflet.",
+        "data": {
+          "illness_name": "Name",
+          "within_hours": "Within … after intake",
+          "replacement_hours": "Replacement pill possible until",
+          "outcome": "Without replacement pill",
+          "backup_days": "Own rule: extra contraception (days)",
+          "text": "What to do"
+        },
+        "data_description": {
+          "illness_name": "e.g. Vomiting, Severe diarrhoea.",
+          "within_hours": "An event up to this many hours after the intake affects the pill.",
+          "replacement_hours": "Hours after the intake until which a replacement pill cancels the event. 0 = not possible.",
+          "backup_days": "Only for “own rule”."
+        }
+      },
+      "remove_illness": {
+        "title": "Remove event",
+        "data": {
+          "remove": "Events to remove"
+        }
+      }
+    },
+    "error": {
+      "window_too_long": "Window before and after together must be shorter than 24 hours.",
+      "required": "Required."
+    }
+  },
+  "selector": {
+    "outcome": {
+      "options": {
+        "as_missed": "Treat like a missed pill",
+        "own_rule": "Own rule"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "later": "Later today",
+          "due": "Due",
+          "overdue": "Yesterday's pill open",
+          "done": "Taken",
+          "pause": "Pause",
+          "last_pause_day": "Last pause day"
+        }
+      },
+      "pill_number": {
+        "name": "Pill number"
+      },
+      "missing_entries": {
+        "name": "Missing entries"
+      },
+      "last_taken": {
+        "name": "Last taken"
+      },
+      "notice_until": {
+        "name": "Notice until"
+      },
+      "pending_intake": {
+        "name": "Unassigned intake"
+      }
+    },
+    "binary_sensor": {
+      "due": {
+        "name": "Due"
+      },
+      "notice": {
+        "name": "Notice"
+      }
+    },
+    "button": {
+      "taken": {
+        "name": "Taken"
+      }
+    },
+    "calendar": {
+      "calendar": {
+        "name": "Calendar"
+      }
+    },
+    "date": {
+      "blister_start": {
+        "name": "Blister start"
+      }
+    },
+    "time": {
+      "dose_time": {
+        "name": "Intake time"
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "No Pill Blister entry with this ID."
+    },
+    "entry_not_loaded": {
+      "message": "This Pill Blister entry is not loaded."
+    },
+    "day_required": {
+      "message": "A date is required when the time is unknown."
+    },
+    "time_in_future": {
+      "message": "The time is in the future."
+    },
+    "not_a_dose_day": {
+      "message": "{day} is not an intake day."
+    },
+    "no_dose_day": {
+      "message": "There is no intake day to assign this intake to."
+    },
+    "nothing_pending": {
+      "message": "There is no intake waiting for assignment."
+    },
+    "no_entry": {
+      "message": "There is no entry for {day}."
+    },
+    "unknown_event": {
+      "message": "Unknown event type “{type}”."
+    },
+    "no_event": {
+      "message": "Event not found."
+    },
+    "no_replacement_needed": {
+      "message": "No event is waiting for a replacement pill."
+    },
+    "date_or_discard": {
+      "message": "Give a date or set discard."
+    }
+  },
+  "services": {
+    "mark_taken": {
+      "name": "Mark taken",
+      "description": "Record an intake. Without a date it is assigned through the intake window; if that is ambiguous you are asked.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Intake day; empty = assign automatically."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Clock time; empty = now."
+        },
+        "time_unknown": {
+          "name": "Time unknown",
+          "description": "Taken, time unknown (needs a date)."
+        },
+        "source": {
+          "name": "Source",
+          "description": "e.g. push, watch, alexa, nfc."
+        }
+      }
+    },
+    "remove_entry": {
+      "name": "Remove entry",
+      "description": "Delete the entry of a day.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Day to clear."
+        }
+      }
+    },
+    "assign_intake": {
+      "name": "Assign intake",
+      "description": "Assign the waiting intake to a day or discard it.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Day the intake belongs to."
+        },
+        "discard": {
+          "name": "Discard",
+          "description": "Discard the intake instead."
+        }
+      }
+    },
+    "start_blister": {
+      "name": "Start blister",
+      "description": "Set the day pill 1 of the current blister was taken.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Day of pill 1; empty = today."
+        }
+      }
+    },
+    "report_event": {
+      "name": "Report event",
+      "description": "Report vomiting, diarrhoea etc.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "type": {
+          "name": "Type",
+          "description": "Key of the event as configured, e.g. vomiting."
+        },
+        "datetime": {
+          "name": "Time",
+          "description": "When it happened; empty = now."
+        }
+      }
+    },
+    "remove_event": {
+      "name": "Remove event",
+      "description": "Delete a reported event.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "event_id": {
+          "name": "Event ID",
+          "description": "ID from the status attributes."
+        }
+      }
+    },
+    "mark_replacement": {
+      "name": "Mark replacement pill",
+      "description": "Record a replacement pill after a reported event.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "Pill Blister entry."
+        },
+        "datetime": {
+          "name": "Time",
+          "description": "When it was taken; empty = now."
+        }
+      }
+    }
+  }
+}

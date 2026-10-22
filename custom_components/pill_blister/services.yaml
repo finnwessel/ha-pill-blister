@@ -1,0 +1,98 @@
+mark_taken:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    date:
+      selector:
+        date:
+    time:
+      selector:
+        time:
+    time_unknown:
+      default: false
+      selector:
+        boolean:
+    source:
+      example: push
+      selector:
+        text:
+
+remove_entry:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    date:
+      required: true
+      selector:
+        date:
+
+assign_intake:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    date:
+      selector:
+        date:
+    discard:
+      default: false
+      selector:
+        boolean:
+
+start_blister:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    date:
+      selector:
+        date:
+
+report_event:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    type:
+      required: true
+      example: vomiting
+      selector:
+        text:
+    datetime:
+      selector:
+        datetime:
+
+remove_event:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    event_id:
+      required: true
+      selector:
+        text:
+
+mark_replacement:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: pill_blister
+    datetime:
+      selector:
+        datetime:

@@ -1,0 +1,383 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pill Blister",
+        "description": "Blister einrichten. Das Einnahmefenster aus dem Beipackzettel übernehmen: wie viel früher oder später eine Einnahme noch für ihren Tag zählt.",
+        "data": {
+          "name": "Name",
+          "dose_time": "Einnahmezeit",
+          "blister_start": "Start des aktuellen Blisters",
+          "person": "Person (optional)",
+          "cycle_on": "Einnahmetage",
+          "cycle_off": "Pausentage",
+          "window_before": "Fenster vor der Einnahmezeit",
+          "window_after": "Fenster nach der Einnahmezeit",
+          "on_time": "Pünktlich bis"
+        },
+        "data_description": {
+          "name": "Wessen Pille. Die Entitäten heißen dann „[Name] Pill …“.",
+          "dose_time": "Uhrzeit, zu der die Pille normalerweise genommen wird.",
+          "blister_start": "Tag, an dem Pille 1 des aktuellen Blisters genommen wurde.",
+          "person": "Wird in Events mitgegeben, z. B. für Benachrichtigungen.",
+          "window_before": "So viel früher zählt eine Einnahme noch für diesen Tag.",
+          "window_after": "So viel später zählt eine Einnahme noch für diesen Tag, auch nach Mitternacht. Außerhalb jedes Fensters wird gefragt, zu welchem Tag sie gehört.",
+          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige)."
+        }
+      },
+      "missed": {
+        "title": "Vergessene Pille (Beipackzettel)",
+        "description": "Bitte die Angaben aus dem Beipackzettel eintragen. Nichts ist vorbelegt: Die Integration zeigt nur Hinweise auf Basis dieser Regeln und behauptet nie, dass Schutz besteht.",
+        "data": {
+          "missed_after": "Vergessen ab",
+          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
+          "week1_text": "Woche 1: was zu tun ist",
+          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
+          "week2_text": "Woche 2: was zu tun ist",
+          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
+          "week3_text": "Woche 3: was zu tun ist",
+          "multi_days": "Mehrere vergessen im selben Blister: zusätzlich verhüten (Tage)",
+          "multi_text": "Mehrere vergessen: was zu tun ist"
+        },
+        "data_description": {
+          "missed_after": "Stunden nach der Einnahmezeit, ab denen eine Pille als vergessen gilt (später oder gar nicht).",
+          "week1_days": "0 = kein Hinweis.",
+          "week2_days": "0 = kein Hinweis.",
+          "week3_days": "0 = kein Hinweis.",
+          "multi_days": "Optional; leer = es gilt die Wochenregel."
+        }
+      },
+      "illness": {
+        "title": "Erbrechen, Durchfall & Co.",
+        "description": "Optional: Ereignisse, die eine Pille unwirksam machen können. Name leer lassen zum Abschließen.",
+        "data": {
+          "illness_name": "Name",
+          "within_hours": "Innerhalb … nach der Einnahme",
+          "replacement_hours": "Ersatzpille möglich bis",
+          "outcome": "Ohne Ersatzpille",
+          "backup_days": "Eigene Regel: zusätzlich verhüten (Tage)",
+          "text": "Was zu tun ist",
+          "add_another": "Weiteres hinzufügen"
+        },
+        "data_description": {
+          "illness_name": "z. B. Erbrechen, Starker Durchfall.",
+          "within_hours": "Ein Ereignis bis so viele Stunden nach der Einnahme betrifft die Pille.",
+          "replacement_hours": "Stunden nach der Einnahme, bis zu denen eine Ersatzpille das Ereignis aufhebt. 0 = nicht möglich.",
+          "backup_days": "Nur bei „Eigene Regel“."
+        }
+      }
+    },
+    "error": {
+      "window_too_long": "Fenster davor und danach zusammen müssen kürzer als 24 Stunden sein.",
+      "required": "Pflichtfeld."
+    },
+    "abort": {
+      "already_configured": "Diese Person ist schon eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pill Blister",
+        "menu_options": {
+          "general": "Allgemein",
+          "missed": "Vergessene Pille",
+          "add_illness": "Ereignis hinzufügen",
+          "remove_illness": "Ereignis entfernen"
+        }
+      },
+      "general": {
+        "title": "Allgemein",
+        "description": "Einnahmezeit und Blisterstart werden über ihre Entitäten geändert.",
+        "data": {
+          "person": "Person (optional)",
+          "cycle_on": "Einnahmetage",
+          "cycle_off": "Pausentage",
+          "window_before": "Fenster vor der Einnahmezeit",
+          "window_after": "Fenster nach der Einnahmezeit",
+          "on_time": "Pünktlich bis"
+        },
+        "data_description": {
+          "person": "Wird in Events mitgegeben, z. B. für Benachrichtigungen.",
+          "window_before": "So viel früher zählt eine Einnahme noch für diesen Tag.",
+          "window_after": "So viel später zählt eine Einnahme noch für diesen Tag, auch nach Mitternacht. Außerhalb jedes Fensters wird gefragt, zu welchem Tag sie gehört.",
+          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige)."
+        }
+      },
+      "missed": {
+        "title": "Vergessene Pille (Beipackzettel)",
+        "description": "Bitte die Angaben aus dem Beipackzettel eintragen. Nichts ist vorbelegt: Die Integration zeigt nur Hinweise auf Basis dieser Regeln und behauptet nie, dass Schutz besteht.",
+        "data": {
+          "missed_after": "Vergessen ab",
+          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
+          "week1_text": "Woche 1: was zu tun ist",
+          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
+          "week2_text": "Woche 2: was zu tun ist",
+          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
+          "week3_text": "Woche 3: was zu tun ist",
+          "multi_days": "Mehrere vergessen im selben Blister: zusätzlich verhüten (Tage)",
+          "multi_text": "Mehrere vergessen: was zu tun ist"
+        },
+        "data_description": {
+          "missed_after": "Stunden nach der Einnahmezeit, ab denen eine Pille als vergessen gilt (später oder gar nicht).",
+          "week1_days": "0 = kein Hinweis.",
+          "week2_days": "0 = kein Hinweis.",
+          "week3_days": "0 = kein Hinweis.",
+          "multi_days": "Optional; leer = es gilt die Wochenregel."
+        }
+      },
+      "add_illness": {
+        "title": "Ereignis hinzufügen",
+        "description": "Ein Ereignis, das eine Pille unwirksam machen kann, wie im Beipackzettel beschrieben.",
+        "data": {
+          "illness_name": "Name",
+          "within_hours": "Innerhalb … nach der Einnahme",
+          "replacement_hours": "Ersatzpille möglich bis",
+          "outcome": "Ohne Ersatzpille",
+          "backup_days": "Eigene Regel: zusätzlich verhüten (Tage)",
+          "text": "Was zu tun ist"
+        },
+        "data_description": {
+          "illness_name": "z. B. Erbrechen, Starker Durchfall.",
+          "within_hours": "Ein Ereignis bis so viele Stunden nach der Einnahme betrifft die Pille.",
+          "replacement_hours": "Stunden nach der Einnahme, bis zu denen eine Ersatzpille das Ereignis aufhebt. 0 = nicht möglich.",
+          "backup_days": "Nur bei „Eigene Regel“."
+        }
+      },
+      "remove_illness": {
+        "title": "Ereignis entfernen",
+        "data": {
+          "remove": "Zu entfernende Ereignisse"
+        }
+      }
+    },
+    "error": {
+      "window_too_long": "Fenster davor und danach zusammen müssen kürzer als 24 Stunden sein.",
+      "required": "Pflichtfeld."
+    }
+  },
+  "selector": {
+    "outcome": {
+      "options": {
+        "as_missed": "Wie vergessene Pille behandeln",
+        "own_rule": "Eigene Regel"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "later": "Heute später",
+          "due": "Fällig",
+          "overdue": "Pille von gestern offen",
+          "done": "Genommen",
+          "pause": "Pause",
+          "last_pause_day": "Letzter Pausentag"
+        }
+      },
+      "pill_number": {
+        "name": "Pillennummer"
+      },
+      "missing_entries": {
+        "name": "Fehlende Einträge"
+      },
+      "last_taken": {
+        "name": "Zuletzt genommen"
+      },
+      "notice_until": {
+        "name": "Hinweis bis"
+      },
+      "pending_intake": {
+        "name": "Nicht zugeordnete Einnahme"
+      }
+    },
+    "binary_sensor": {
+      "due": {
+        "name": "Fällig"
+      },
+      "notice": {
+        "name": "Hinweis"
+      }
+    },
+    "button": {
+      "taken": {
+        "name": "Genommen"
+      }
+    },
+    "calendar": {
+      "calendar": {
+        "name": "Kalender"
+      }
+    },
+    "date": {
+      "blister_start": {
+        "name": "Blisterstart"
+      }
+    },
+    "time": {
+      "dose_time": {
+        "name": "Einnahmezeit"
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_found": {
+      "message": "Kein Pill-Blister-Eintrag mit dieser ID."
+    },
+    "entry_not_loaded": {
+      "message": "Dieser Pill-Blister-Eintrag ist nicht geladen."
+    },
+    "day_required": {
+      "message": "Bei unbekannter Uhrzeit wird ein Datum gebraucht."
+    },
+    "time_in_future": {
+      "message": "Die Uhrzeit liegt in der Zukunft."
+    },
+    "not_a_dose_day": {
+      "message": "{day} ist kein Einnahmetag."
+    },
+    "no_dose_day": {
+      "message": "Es gibt keinen Einnahmetag, dem diese Einnahme zugeordnet werden kann."
+    },
+    "nothing_pending": {
+      "message": "Es wartet keine Einnahme auf eine Zuordnung."
+    },
+    "no_entry": {
+      "message": "Für {day} gibt es keinen Eintrag."
+    },
+    "unknown_event": {
+      "message": "Unbekannter Ereignistyp „{type}“."
+    },
+    "no_event": {
+      "message": "Ereignis nicht gefunden."
+    },
+    "no_replacement_needed": {
+      "message": "Kein Ereignis wartet auf eine Ersatzpille."
+    },
+    "date_or_discard": {
+      "message": "Datum angeben oder „Verwerfen“ setzen."
+    }
+  },
+  "services": {
+    "mark_taken": {
+      "name": "Als genommen eintragen",
+      "description": "Einnahme eintragen. Ohne Datum wird über das Einnahmefenster zugeordnet; ist das nicht eindeutig, wird gefragt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Einnahmetag; leer = automatisch zuordnen."
+        },
+        "time": {
+          "name": "Uhrzeit",
+          "description": "Uhrzeit; leer = jetzt."
+        },
+        "time_unknown": {
+          "name": "Uhrzeit unbekannt",
+          "description": "Genommen, Uhrzeit unbekannt (braucht ein Datum)."
+        },
+        "source": {
+          "name": "Quelle",
+          "description": "z. B. push, watch, alexa, nfc."
+        }
+      }
+    },
+    "remove_entry": {
+      "name": "Eintrag entfernen",
+      "description": "Eintrag eines Tages löschen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Zu leerender Tag."
+        }
+      }
+    },
+    "assign_intake": {
+      "name": "Einnahme zuordnen",
+      "description": "Wartende Einnahme einem Tag zuordnen oder verwerfen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Tag, zu dem die Einnahme gehört."
+        },
+        "discard": {
+          "name": "Verwerfen",
+          "description": "Einnahme stattdessen verwerfen."
+        }
+      }
+    },
+    "start_blister": {
+      "name": "Blister starten",
+      "description": "Tag festlegen, an dem Pille 1 des aktuellen Blisters genommen wurde.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "date": {
+          "name": "Datum",
+          "description": "Tag von Pille 1; leer = heute."
+        }
+      }
+    },
+    "report_event": {
+      "name": "Ereignis melden",
+      "description": "Erbrechen, Durchfall usw. melden.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "type": {
+          "name": "Typ",
+          "description": "Schlüssel des eingerichteten Ereignisses, z. B. erbrechen."
+        },
+        "datetime": {
+          "name": "Zeitpunkt",
+          "description": "Wann es passiert ist; leer = jetzt."
+        }
+      }
+    },
+    "remove_event": {
+      "name": "Ereignis entfernen",
+      "description": "Gemeldetes Ereignis löschen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "event_id": {
+          "name": "Ereignis-ID",
+          "description": "ID aus den Status-Attributen."
+        }
+      }
+    },
+    "mark_replacement": {
+      "name": "Ersatzpille eintragen",
+      "description": "Ersatzpille nach einem gemeldeten Ereignis eintragen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Eintrag",
+          "description": "Pill-Blister-Eintrag."
+        },
+        "datetime": {
+          "name": "Zeitpunkt",
+          "description": "Wann sie genommen wurde; leer = jetzt."
+        }
+      }
+    }
+  }
+}

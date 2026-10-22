@@ -1,0 +1,39 @@
+{
+  "entity": {
+    "sensor": {
+      "status": {
+        "default": "mdi:pill",
+        "state": {
+          "later": "mdi:clock-outline",
+          "due": "mdi:alert-circle",
+          "overdue": "mdi:alert-circle",
+          "done": "mdi:check-circle",
+          "pause": "mdi:pause-circle-outline",
+          "last_pause_day": "mdi:package-variant"
+        }
+      },
+      "pill_number": { "default": "mdi:pill" },
+      "missing_entries": { "default": "mdi:calendar-question" },
+      "last_taken": { "default": "mdi:history" },
+      "notice_until": { "default": "mdi:shield-alert-outline" },
+      "pending_intake": { "default": "mdi:help-circle-outline" }
+    },
+    "binary_sensor": {
+      "due": { "default": "mdi:pill", "state": { "on": "mdi:pill-multiple" } },
+      "notice": { "default": "mdi:shield-check-outline", "state": { "on": "mdi:shield-alert" } }
+    },
+    "button": { "taken": { "default": "mdi:pill" } },
+    "calendar": { "calendar": { "default": "mdi:calendar-month" } },
+    "date": { "blister_start": { "default": "mdi:calendar-start" } },
+    "time": { "dose_time": { "default": "mdi:clock-time-eight-outline" } }
+  },
+  "services": {
+    "mark_taken": { "service": "mdi:pill" },
+    "remove_entry": { "service": "mdi:delete-outline" },
+    "assign_intake": { "service": "mdi:calendar-arrow-right" },
+    "start_blister": { "service": "mdi:calendar-start" },
+    "report_event": { "service": "mdi:emoticon-sick-outline" },
+    "remove_event": { "service": "mdi:delete-outline" },
+    "mark_replacement": { "service": "mdi:pill-multiple" }
+  }
+}
