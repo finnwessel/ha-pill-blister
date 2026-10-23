@@ -35,6 +35,7 @@ CONF_REMOVE = "remove"
 
 OUTCOME_AS_MISSED = "as_missed"
 OUTCOME_OWN = "own_rule"
+OUTCOME_CYCLE_END = "until_cycle_end"
 
 WEEKS = 3
 

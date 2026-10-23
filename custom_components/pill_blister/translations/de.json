@@ -160,6 +160,7 @@
     "outcome": {
       "options": {
         "as_missed": "Wie vergessene Pille behandeln",
+        "until_cycle_end": "Zusätzlich verhüten für den Rest des Zyklus",
         "own_rule": "Eigene Regel"
       }
     }

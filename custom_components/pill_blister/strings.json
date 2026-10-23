@@ -160,6 +160,7 @@
     "outcome": {
       "options": {
         "as_missed": "Treat like a missed pill",
+        "until_cycle_end": "Extra contraception for the rest of the cycle",
         "own_rule": "Own rule"
       }
     }

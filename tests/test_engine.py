@@ -348,3 +348,27 @@ def test_untracked_days_are_not_offered():
         assert exc.pending.options == [day(10)]
     else:
         raise AssertionError("expected AssignmentNeeded")
+
+
+def test_illness_until_cycle_end():
+    e = make(
+        illnesses=(
+            IllnessRule(
+                "erbrechen",
+                "Erbrechen",
+                within_hours=4,
+                as_missed=False,
+                until_cycle_end=True,
+                text="Rest des Zyklus",
+            ),
+        )
+    )
+    fill(e, 10)
+    e.report_event(at(day(10), 22), "erbrechen", at(day(10), 22))
+    n = e.notices(at(day(10), 22, 5))
+    assert len(n) == 1 and n[0].kind == "illness"
+    assert n[0].end == at(day(29), 20)  # pill 1 of the next blister
+    for k in range(11, 22):
+        e.mark_taken(at(day(k), 21), day=day(k))
+    assert e.notices(at(day(28), 12))[0].kind == "illness"
+    assert e.notices(at(day(29), 20, 1)) == []

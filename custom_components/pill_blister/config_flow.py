@@ -49,6 +49,7 @@ from .const import (
     DEFAULT_ON_TIME,
     DOMAIN,
     OUTCOME_AS_MISSED,
+    OUTCOME_CYCLE_END,
     OUTCOME_OWN,
     WEEKS,
 )
@@ -169,7 +170,7 @@ def _illness_schema(required_name: bool, add_another: bool) -> vol.Schema:
         vol.Optional(CONF_ILL_REPLACEMENT): _number(0, 48, 0.5, "h"),
         vol.Optional(CONF_ILL_OUTCOME, default=OUTCOME_AS_MISSED): selector.SelectSelector(
             selector.SelectSelectorConfig(
-                options=[OUTCOME_AS_MISSED, OUTCOME_OWN],
+                options=[OUTCOME_AS_MISSED, OUTCOME_CYCLE_END, OUTCOME_OWN],
                 translation_key="outcome",
                 mode=selector.SelectSelectorMode.LIST,
             )
@@ -201,7 +202,8 @@ def _illness(
         "name": name,
         "within_hours": float(user_input[CONF_ILL_WITHIN]),
         "replacement_hours": float(user_input.get(CONF_ILL_REPLACEMENT) or 0),
-        "as_missed": not own,
+        "as_missed": user_input.get(CONF_ILL_OUTCOME, OUTCOME_AS_MISSED) == OUTCOME_AS_MISSED,
+        "until_cycle_end": user_input.get(CONF_ILL_OUTCOME) == OUTCOME_CYCLE_END,
         "backup_days": float(user_input.get(CONF_ILL_DAYS) or 0),
         "text": str(user_input.get(CONF_ILL_TEXT) or "").strip(),
     }, {}

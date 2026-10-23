@@ -53,6 +53,7 @@ class IllnessRule:
     replacement_hours: float = 0.0  # 0 = no replacement pill possible
     as_missed: bool = True
     backup_days: float = 0.0  # only when not as_missed
+    until_cycle_end: bool = False  # notice lasts for the remaining days of the cycle
     text: str = ""
 
     @classmethod
@@ -64,6 +65,7 @@ class IllnessRule:
             replacement_hours=float(d.get("replacement_hours") or 0),
             as_missed=bool(d.get("as_missed", True)),
             backup_days=float(d.get("backup_days") or 0),
+            until_cycle_end=bool(d.get("until_cycle_end")),
             text=str(d.get("text") or ""),
         )
 
@@ -526,13 +528,20 @@ class PillBlister:
                     )
                 )
                 continue
-            if rule.as_missed:
-                mrule = self.p.missed_rules[self.week_index(entry.day)]
-                days, text = mrule.backup_days, mrule.text or rule.text
+            if rule.until_cycle_end:
+                # Until pill 1 of the next blister (remaining days of the cycle incl. pause).
+                next_start = self.blister_start_for(entry.day) + timedelta(days=self.p.cycle_len)
+                end = self.dose_dt(next_start)
+                text = rule.text
             else:
-                days, text = rule.backup_days, rule.text
-            if days <= 0:
-                continue
+                if rule.as_missed:
+                    mrule = self.p.missed_rules[self.week_index(entry.day)]
+                    days, text = mrule.backup_days, mrule.text or rule.text
+                else:
+                    days, text = rule.backup_days, rule.text
+                if days <= 0:
+                    continue
+                end = ev.time + timedelta(days=days)
             out.append(
                 Notice(
                     id=f"illness-{ev.id}",
@@ -540,7 +549,7 @@ class PillBlister:
                     day=entry.day,
                     pill=pill,
                     start=ev.time,
-                    end=ev.time + timedelta(days=days),
+                    end=end,
                     reason=f"{rule.name} nach Pille {pill}",
                     text=text,
                     event_type=rule.key,
