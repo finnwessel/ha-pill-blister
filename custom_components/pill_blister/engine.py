@@ -567,7 +567,7 @@ class PillBlister:
         yesterday = self.local(now).date() - timedelta(days=1)
         if (
             self.is_dose_day(yesterday)
-            and yesterday not in self.j.entries
+            and self._is_open(yesterday)
             and now <= self.window(yesterday)[1]
         ):
             return yesterday

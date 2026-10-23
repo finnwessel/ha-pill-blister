@@ -372,3 +372,10 @@ def test_illness_until_cycle_end():
         e.mark_taken(at(day(k), 21), day=day(k))
     assert e.notices(at(day(28), 12))[0].kind == "illness"
     assert e.notices(at(day(29), 20, 1)) == []
+
+
+def test_setup_day_does_not_flag_untracked_yesterday():
+    e = make()
+    e.j.tracking_since = day(11)
+    assert e.status(at(day(11), 7)) == "later"
+    assert e.open_overdue(at(day(11), 7)) is None
