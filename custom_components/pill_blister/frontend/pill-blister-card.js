@@ -10,12 +10,25 @@
  * order: weekday | number   # optional. weekday: pill sits in its weekday row (blister printed
  *   Mo–So). number: pills in number order along the columns, labelled with their weekday
  *   (multiphasic blisters like Quelecia). Default: number if the blister has placebo pills.
+ *   In number order every column starts at the bottom (arrows show the direction).
+ * colors: { "1-2": "#d9a21b", "3-7": "#f4a7b9", "8-24": "#f3df7a" }   # optional pill colours
+ *   per pill number or range; placebo pills default to white.
  */
 
 const WD = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
 const WD_LANG = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const defaultColumns = (pills) => Array.from({ length: Math.max(1, Math.ceil(pills / 7)) },
-  (_, c) => (c % 2 ? [0, 1, 2, 3, 4, 5, 6] : [6, 5, 4, 3, 2, 1, 0]));
+const UP = [6, 5, 4, 3, 2, 1, 0];
+const defaultColumns = (pills, byNumber) => Array.from({ length: Math.max(1, Math.ceil(pills / 7)) },
+  (_, c) => (c % 2 && !byNumber ? [0, 1, 2, 3, 4, 5, 6] : UP));
+/** { "1-2": "#c90", "5": "red" } → colour for a pill number, or null. */
+const pillColor = (colors, pill) => {
+  if (!colors) return null;
+  for (const [range, color] of Object.entries(colors)) {
+    const [from, to] = String(range).split('-').map(Number);
+    if (pill >= from && pill <= (Number.isNaN(to) || to === undefined ? from : to)) return color;
+  }
+  return null;
+};
 const UNDO_MS = 8000;
 const DOMAIN = 'pill_blister';
 
@@ -169,10 +182,10 @@ class PillBlisterCard extends HTMLElement {
     const a = this._a;
     const days = a.days || [];
     if (!days.length) return '';
-    const cols = this._config.columns || defaultColumns(days.length);
-    const rows = cols[0].length;
     const startWd = days[0].weekday;
     const byNumber = this._config.order ? this._config.order === 'number' : a.placebo > 0;
+    const cols = this._config.columns || defaultColumns(days.length, byNumber);
+    const rows = cols[0].length;
     const pause = a.status === 'pause' || a.status === 'last_pause_day';
     const len = days.length;
     let cells = '';
@@ -200,15 +213,27 @@ class PillBlisterCard extends HTMLElement {
           case 'open': cls = `pill today${isOverdue ? ' overdue' : ''}`; break;
           default: cls = 'pill';
         }
-        if (d.placebo && cls.startsWith('pill')) cls += ' placebo';
+        let style = '';
+        if (cls.startsWith('pill')) {
+          if (d.placebo) cls += ' placebo';
+          const color = pillColor(this._config.colors, d.pill);
+          if (color) style = `--pill:${esc(color)};`;
+        }
         if (d.events && d.events.length) inner += '<span class="dot"></span>';
         const label = isToday || isOverdue;
         cells += `<span class="lbl${label ? ' lbl-today' : ''}" style="grid-column:${c * 2 + 1};grid-row:${r + 2}">${WD[wd]}</span>`
-          + `<button class="${cls}" style="grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[wd]}, Pille ${d.pill}${d.placebo ? ', Placebo' : ''}">${inner}</button>`;
+          + `<button class="${cls}" style="${style}grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[wd]}, Pille ${d.pill}${d.placebo ? ', Placebo' : ''}">${inner}</button>`;
       });
     });
     let bends = '';
-    for (let c = 0; c < cols.length - 1; c++) {
+    if (byNumber) {
+      // Reading direction: a line behind each column with an arrow at its end.
+      cols.forEach((col, c) => {
+        const up = col[0] > col[col.length - 1];
+        bends += `<span class="flow ${up ? 'up' : 'down'}" style="grid-column:${c * 2 + 2};grid-row:1 / ${rows + 3}"></span>`;
+      });
+    }
+    for (let c = 0; c < cols.length - 1 && !byNumber; c++) {
       const endsTop = cols[c][0] > cols[c][cols[c].length - 1];
       bends += `<span class="bend ${endsTop ? 'top' : 'bottom'}" style="grid-column:${c * 2 + 1} / ${c * 2 + 4};grid-row:${endsTop ? 1 : rows + 2}"></span>`;
     }
@@ -467,11 +492,17 @@ PillBlisterCard.styles = `
   .bend { align-self: stretch; margin: 0 2px 0 4px; border-color: color-mix(in srgb, var(--primary-text-color) 22%, transparent); border-style: solid; border-width: 0; }
   .bend.top { border-width: 1.5px 1.5px 0 1.5px; border-radius: 6px 6px 0 0; margin-top: 2px; }
   .bend.bottom { border-width: 0 1.5px 1.5px 1.5px; border-radius: 0 0 6px 6px; margin-bottom: 2px; }
+  .flow { --l: color-mix(in srgb, var(--primary-text-color) 26%, transparent); position: relative; justify-self: center; align-self: stretch;
+    width: 1.5px; margin: 6px 0; background: var(--l); }
+  .flow::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); border: 4.5px solid transparent; }
+  .flow.up::after { top: -6px; border-top: 0; border-bottom: 7px solid var(--l); }
+  .flow.down::after { bottom: -6px; border-bottom: 0; border-top: 7px solid var(--l); }
+  .foil > button { z-index: 1; }
   :where(.foil) button { all: unset; box-sizing: border-box; position: relative; width: 32px; height: 32px; margin: 4px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .foil .pill { background: var(--pill); box-shadow: inset 0 -2px 0 color-mix(in srgb, #000 12%, transparent); }
   .foil .empty { background: color-mix(in srgb, #000 22%, var(--foil)); border: 1.5px dashed color-mix(in srgb, var(--primary-text-color) 30%, transparent); }
-  .foil .pill.placebo { background: #f5f5f2; }
+  .foil .pill.placebo { --pill: #f5f5f2; }
   .foil .untracked { opacity: .55; }
   .foil .late { border-color: var(--orange-color, #ff9800); }
   .foil .missing { box-shadow: 0 0 0 2.5px var(--foil), 0 0 0 4.5px var(--orange-color, #ff9800); }
