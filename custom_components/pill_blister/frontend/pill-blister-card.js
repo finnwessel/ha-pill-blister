@@ -7,6 +7,9 @@
  * settings_hash: '#pille-einstellungen'   # optional, opens a popup via the gear
  * columns: [[6,5,4,3,2,1,0],[0,1,2,3,4,5,6],[6,5,4,3,2,1,0]]   # optional blister layout (0 = Monday)
  *   default: one column per 7 pills (3 for 21, 4 for 28), alternating direction
+ * order: weekday | number   # optional. weekday: pill sits in its weekday row (blister printed
+ *   Mo–So). number: pills in number order along the columns, labelled with their weekday
+ *   (multiphasic blisters like Quelecia). Default: number if the blister has placebo pills.
  */
 
 const WD = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
@@ -169,14 +172,20 @@ class PillBlisterCard extends HTMLElement {
     const cols = this._config.columns || defaultColumns(days.length);
     const rows = cols[0].length;
     const startWd = days[0].weekday;
+    const byNumber = this._config.order ? this._config.order === 'number' : a.placebo > 0;
     const pause = a.status === 'pause' || a.status === 'last_pause_day';
     const len = days.length;
     let cells = '';
     cols.forEach((col, c) => {
       col.forEach((w, r) => {
-        const k = (c * 7 + w - startWd + 3 * len) % len;
+        let k = (c * 7 + w - startWd + 3 * len) % len;
+        if (byNumber) {
+          const down = col[0] < col[col.length - 1];
+          k = c * col.length + (down ? r : col.length - 1 - r);
+        }
         const d = days[k];
         if (!d) return;
+        const wd = byNumber ? d.weekday : w;
         const isToday = d.date === a.today;
         const isOverdue = d.date === a.overdue_day;
         let cls = 'pill'; let inner = '';
@@ -194,8 +203,8 @@ class PillBlisterCard extends HTMLElement {
         if (d.placebo && cls.startsWith('pill')) cls += ' placebo';
         if (d.events && d.events.length) inner += '<span class="dot"></span>';
         const label = isToday || isOverdue;
-        cells += `<span class="lbl${label ? ' lbl-today' : ''}" style="grid-column:${c * 2 + 1};grid-row:${r + 2}">${WD[w]}</span>`
-          + `<button class="${cls}" style="grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[w]}, Pille ${d.pill}${d.placebo ? ', Placebo' : ''}">${inner}</button>`;
+        cells += `<span class="lbl${label ? ' lbl-today' : ''}" style="grid-column:${c * 2 + 1};grid-row:${r + 2}">${WD[wd]}</span>`
+          + `<button class="${cls}" style="grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[wd]}, Pille ${d.pill}${d.placebo ? ', Placebo' : ''}">${inner}</button>`;
       });
     });
     let bends = '';

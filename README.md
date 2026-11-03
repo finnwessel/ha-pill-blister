@@ -55,7 +55,7 @@ entity: sensor.<name>_pill_status
 settings_hash: "#pille-einstellungen"  # optional: Zahnrad öffnet ein Popup
 ```
 
-Antippen einer Pille öffnet den Tag: Uhrzeit und Pünktlichkeit, Uhrzeit ändern, nachtragen, entfernen, Erbrechen/Durchfall melden. Das Blister-Layout lässt sich mit `columns` anpassen (Standard: eine Reihe je 7 Pillen, also 4 bei 28). Placebotabletten werden weiß dargestellt.
+Antippen einer Pille öffnet den Tag: Uhrzeit und Pünktlichkeit, Uhrzeit ändern, nachtragen, entfernen, Erbrechen/Durchfall melden. Das Blister-Layout lässt sich mit `columns` anpassen (Standard: eine Reihe je 7 Pillen, also 4 bei 28). Placebotabletten werden weiß dargestellt. Mit Placebotabletten liegen die Pillen in Nummernreihenfolge (wie bei Quelecia, beschriftet mit dem jeweiligen Wochentag), sonst nach Wochentag; umstellbar mit `order: number` bzw. `order: weekday`.
 
 ## Entwicklung
 
