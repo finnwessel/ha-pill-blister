@@ -11,6 +11,7 @@
           "person": "Person (optional)",
           "cycle_on": "Intake days",
           "cycle_off": "Pause days",
+          "placebo": "Placebo tablets",
           "window_before": "Window before intake time",
           "window_after": "Window after intake time",
           "on_time": "On time up to"
@@ -22,7 +23,9 @@
           "person": "Passed along in events, e.g. for notifications.",
           "window_before": "An intake this much earlier still counts for that day.",
           "window_after": "An intake this much later still counts for that day, also after midnight. Outside every window you are asked which day it belongs to.",
-          "on_time": "Deviation that still counts as on time (only for display)."
+          "on_time": "Deviation that still counts as on time (only for display).",
+          "cycle_off": "0 for continuous intake (e.g. 28 tablets without a break).",
+          "placebo": "Tablets without active ingredient at the end of the intake days (e.g. 2 for 26 + 2). They are recorded but never cause a notice."
         }
       },
       "missed": {
@@ -30,21 +33,45 @@
         "description": "Enter what your package leaflet says. Nothing is pre-filled: the integration only shows notices based on these rules and never states that protection exists.",
         "data": {
           "missed_after": "Missed after",
-          "week1_days": "Week 1: extra contraception (days)",
-          "week1_text": "Week 1: what to do",
-          "week2_days": "Week 2: extra contraception (days)",
-          "week2_text": "Week 2: what to do",
-          "week3_days": "Week 3: extra contraception (days)",
-          "week3_text": "Week 3: what to do",
+          "rule_mode": "Rules in the package leaflet",
           "multi_days": "Several missed in one blister: extra contraception (days)",
           "multi_text": "Several missed: what to do"
         },
         "data_description": {
           "missed_after": "Hours after the intake time from which a pill counts as missed (later or not at all).",
+          "rule_mode": "Most pills differ by blister week. Multiphasic pills (e.g. Quelecia, Qlaira) by tablet number, e.g. 1–17, 18–24, 25–26.",
+          "multi_days": "Optional; empty = the rule of the respective pill applies."
+        }
+      },
+      "weeks": {
+        "title": "Missed pill per blister week",
+        "description": "What the package leaflet says when a pill of this week was missed.",
+        "data": {
+          "week1_days": "Week 1: extra contraception (days)",
+          "week1_text": "Week 1: what to do",
+          "week2_days": "Week 2: extra contraception (days)",
+          "week2_text": "Week 2: what to do",
+          "week3_days": "Week 3: extra contraception (days)",
+          "week3_text": "Week 3: what to do"
+        },
+        "data_description": {
           "week1_days": "0 = no notice.",
           "week2_days": "0 = no notice.",
-          "week3_days": "0 = no notice.",
-          "multi_days": "Optional; empty = week rule applies."
+          "week3_days": "0 = no notice."
+        }
+      },
+      "phase": {
+        "title": "Missed pill per tablet number",
+        "description": "One range from the table in the package leaflet, e.g. tablets 1–17. You are asked for the next one until all active tablets 1–{active} are covered.\n\nStill without a rule: **{missing}**\nPlacebo tablets (no rule needed): {placebo}",
+        "data": {
+          "from_pill": "From tablet",
+          "to_pill": "To tablet",
+          "backup_days": "Extra contraception (days)",
+          "text": "What to do"
+        },
+        "data_description": {
+          "backup_days": "0 = no notice (e.g. “no additional measures required”).",
+          "text": "e.g. “Discard the current pack and start tablet 1 of a new one right away”. Then set the new blister via “Blister start”."
         }
       },
       "illness": {
@@ -69,7 +96,11 @@
     },
     "error": {
       "window_too_long": "Window before and after together must be shorter than 24 hours.",
-      "required": "Required."
+      "required": "Required.",
+      "placebo_too_many": "There must be at least one active tablet.",
+      "phase_order": "“To” must be at least “From”.",
+      "phase_range": "Only active tablets 1–{active}.",
+      "phase_overlap": "Overlaps with a range already entered."
     },
     "abort": {
       "already_configured": "This person is already set up."
@@ -93,6 +124,7 @@
           "person": "Person (optional)",
           "cycle_on": "Intake days",
           "cycle_off": "Pause days",
+          "placebo": "Placebo tablets",
           "window_before": "Window before intake time",
           "window_after": "Window after intake time",
           "on_time": "On time up to"
@@ -101,7 +133,9 @@
           "person": "Passed along in events, e.g. for notifications.",
           "window_before": "An intake this much earlier still counts for that day.",
           "window_after": "An intake this much later still counts for that day, also after midnight. Outside every window you are asked which day it belongs to.",
-          "on_time": "Deviation that still counts as on time (only for display)."
+          "on_time": "Deviation that still counts as on time (only for display).",
+          "cycle_off": "0 for continuous intake (e.g. 28 tablets without a break).",
+          "placebo": "Tablets without active ingredient at the end of the intake days (e.g. 2 for 26 + 2). They are recorded but never cause a notice."
         }
       },
       "missed": {
@@ -109,21 +143,45 @@
         "description": "Enter what your package leaflet says. Nothing is pre-filled: the integration only shows notices based on these rules and never states that protection exists.",
         "data": {
           "missed_after": "Missed after",
-          "week1_days": "Week 1: extra contraception (days)",
-          "week1_text": "Week 1: what to do",
-          "week2_days": "Week 2: extra contraception (days)",
-          "week2_text": "Week 2: what to do",
-          "week3_days": "Week 3: extra contraception (days)",
-          "week3_text": "Week 3: what to do",
+          "rule_mode": "Rules in the package leaflet",
           "multi_days": "Several missed in one blister: extra contraception (days)",
           "multi_text": "Several missed: what to do"
         },
         "data_description": {
           "missed_after": "Hours after the intake time from which a pill counts as missed (later or not at all).",
+          "rule_mode": "Most pills differ by blister week. Multiphasic pills (e.g. Quelecia, Qlaira) by tablet number, e.g. 1–17, 18–24, 25–26.",
+          "multi_days": "Optional; empty = the rule of the respective pill applies."
+        }
+      },
+      "weeks": {
+        "title": "Missed pill per blister week",
+        "description": "What the package leaflet says when a pill of this week was missed.",
+        "data": {
+          "week1_days": "Week 1: extra contraception (days)",
+          "week1_text": "Week 1: what to do",
+          "week2_days": "Week 2: extra contraception (days)",
+          "week2_text": "Week 2: what to do",
+          "week3_days": "Week 3: extra contraception (days)",
+          "week3_text": "Week 3: what to do"
+        },
+        "data_description": {
           "week1_days": "0 = no notice.",
           "week2_days": "0 = no notice.",
-          "week3_days": "0 = no notice.",
-          "multi_days": "Optional; empty = week rule applies."
+          "week3_days": "0 = no notice."
+        }
+      },
+      "phase": {
+        "title": "Missed pill per tablet number",
+        "description": "One range from the table in the package leaflet, e.g. tablets 1–17. You are asked for the next one until all active tablets 1–{active} are covered.\n\nStill without a rule: **{missing}**\nPlacebo tablets (no rule needed): {placebo}",
+        "data": {
+          "from_pill": "From tablet",
+          "to_pill": "To tablet",
+          "backup_days": "Extra contraception (days)",
+          "text": "What to do"
+        },
+        "data_description": {
+          "backup_days": "0 = no notice (e.g. “no additional measures required”).",
+          "text": "e.g. “Discard the current pack and start tablet 1 of a new one right away”. Then set the new blister via “Blister start”."
         }
       },
       "add_illness": {
@@ -153,7 +211,11 @@
     },
     "error": {
       "window_too_long": "Window before and after together must be shorter than 24 hours.",
-      "required": "Required."
+      "required": "Required.",
+      "placebo_too_many": "There must be at least one active tablet.",
+      "phase_order": "“To” must be at least “From”.",
+      "phase_range": "Only active tablets 1–{active}.",
+      "phase_overlap": "Overlaps with a range already entered."
     }
   },
   "selector": {
@@ -162,6 +224,12 @@
         "as_missed": "Treat like a missed pill",
         "until_cycle_end": "Extra contraception for the rest of the cycle",
         "own_rule": "Own rule"
+      }
+    },
+    "rule_mode": {
+      "options": {
+        "weeks": "Per blister week (week 1, 2, 3)",
+        "pills": "Per tablet number (multiphasic pill)"
       }
     }
   },

@@ -379,3 +379,97 @@ def test_setup_day_does_not_flag_untracked_yesterday():
     e.j.tracking_since = day(11)
     assert e.status(at(day(11), 7)) == "later"
     assert e.open_overdue(at(day(11), 7)) is None
+
+
+# ------------------------------------------------------------------ multiphasic (Quelecia)
+
+
+def quelecia() -> PillBlister:
+    """28 tablets without a break, 26 active + 2 placebo, rules per tablet number."""
+    return make(
+        cycle_on=28,
+        cycle_off=0,
+        placebo=2,
+        multi_missed=None,
+        missed_rules=(
+            MissedRule(9, "nachholen", from_pill=1, to_pill=17),
+            MissedRule(9, "neuen Blister beginnen", from_pill=18, to_pill=24),
+            MissedRule(0, "nachholen, nichts weiter", from_pill=25, to_pill=26),
+        ),
+    )
+
+
+def test_continuous_cycle_has_no_pause():
+    e = quelecia()
+    assert e.pill_number(day(28)) == 28 and e.pill_number(day(29)) == 1
+    assert e.is_placebo(day(27)) and e.is_placebo(day(28)) and not e.is_placebo(day(26))
+    assert e.status(at(day(28), 12)) == "later"
+    snap = e.snapshot(at(day(5), 12))
+    assert snap["next_blister"] == day(29).isoformat()
+    assert len(snap["days"]) == 28 and snap["days"][26].get("placebo")
+    assert "placebo" not in snap["days"][25]
+
+
+def test_missed_rule_per_tablet_number():
+    e = quelecia()
+    fill(e, 4)
+    n = e.notices(at(day(6), 9))  # pill 5 missed (deadline day 5 08:00 next day)
+    assert len(n) == 1 and n[0].text == "nachholen"
+    assert n[0].end == at(day(5), 20) + timedelta(days=9)
+
+    e = quelecia()
+    fill(e, 24)
+    # pills 25-26: rule with 0 days → no notice; placebo 27-28 never
+    assert e.notices(at(day(29), 12)) == []
+    assert e.missed_rule(day(27)) is None
+
+
+def test_placebo_ignores_illness():
+    e = quelecia()
+    fill(e, 27)
+    e.report_event(at(day(27), 21), "vomit", at(day(27), 21))
+    assert e.notices(at(day(27), 21, 5)) == []
+
+
+def test_early_new_blister_keeps_history():
+    e = quelecia()
+    fill(e, 19)
+    # Pill 20 missed → leaflet: discard pack, start a new one right away.
+    e.start_blister(day(21))
+    assert e.pill_number(day(21)) == 1
+    assert e.pill_number(day(20)) == 20  # old blister is not renumbered
+    assert e.pill_number(day(5)) == 5
+    n = e.notices(at(day(21), 21))
+    assert len(n) == 1 and n[0].pill == 20 and n[0].text == "neuen Blister beginnen"
+    assert e.blister_start_for(day(25)) == day(21)
+    snap = e.snapshot(at(day(21), 21))
+    assert snap["days"][0]["date"] == day(21).isoformat()
+    restored = Journal.from_dict(e.j.to_dict())
+    assert restored.starts == [START, day(21)]
+
+
+def test_start_correction_replaces_start_without_entries():
+    e = quelecia()
+    e.start_blister(day(2))  # nothing recorded yet → correction, not a new blister
+    assert e.j.starts == [day(2)]
+    e.start_blister(day(1))  # moving it back again
+    assert e.j.starts == [day(1)]
+
+
+def test_until_cycle_end_stops_at_early_new_blister():
+    e = quelecia()
+    e = PillBlister(
+        Params(
+            **{
+                **e.p.__dict__,
+                "illnesses": (
+                    IllnessRule("x", "X", within_hours=4, as_missed=False, until_cycle_end=True),
+                ),
+            }
+        ),
+        e.j,
+    )
+    fill(e, 10)
+    e.start_blister(day(15))
+    e.report_event(at(day(10), 21), "x", at(day(10), 21))
+    assert e.notices(at(day(10), 22))[0].end == at(day(15), 20)

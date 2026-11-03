@@ -8,19 +8,25 @@ Antibabypille in Home Assistant: Blister mit Zyklus, Einnahmefenster, Einnahme-T
 
 ## Was es macht
 
-- **Zyklus:** z. B. 21 Einnahmetage, 7 Tage Pause, ab dem Starttag des aktuellen Blisters. Der Start lässt sich jederzeit über `date.<name>_pill_blister_start` ändern, die Einnahmezeit über `time.<name>_pill_dose_time`.
+- **Zyklus:** z. B. 21 Einnahmetage, 7 Tage Pause, ab dem Starttag des aktuellen Blisters, oder durchgehend ohne Pause (Pausentage 0, z. B. 28 Tabletten). Der Start lässt sich jederzeit über `date.<name>_pill_blister_start` ändern, die Einnahmezeit über `time.<name>_pill_dose_time`.
+- **Placebotabletten:** Die letzten N Tabletten (z. B. 2 bei 26 + 2) werden eingetragen, lösen aber nie einen Hinweis aus (weder vergessen noch Erbrechen/Durchfall).
 - **Einnahmefenster:** Eine Einnahme zählt für den Tag, in dessen Fenster (z. B. 2 h vorher bis 12 h nachher) sie liegt, auch nach Mitternacht. Ist das nicht eindeutig (außerhalb jedes Fensters oder der Tag ist schon eingetragen), wird **gefragt statt geraten**: `sensor.<name>_pill_pending_intake` und das Event `pill_blister_needs_assignment`, beantwortet mit `pill_blister.assign_intake`.
 - **Tagebuch:** Pro Tag Uhrzeit (oder „unbekannt“), Quelle und ob nachgetragen. Pünktlichkeit wird daraus berechnet. Gespeichert in `.storage`, 400 Tage.
-- **Vergessene Pille:** Kein Eintrag bis „Vergessen ab“ (z. B. 12 h nach der Einnahmezeit) oder eine noch spätere Einnahme → Hinweis „zusätzlich verhüten bis …“ mit dem Text der passenden Blisterwoche. Optional eigene Regel für mehrere vergessene Pillen im selben Blister.
+- **Vergessene Pille:** Kein Eintrag bis „Vergessen ab“ (z. B. 12 h nach der Einnahmezeit) oder eine noch spätere Einnahme → Hinweis „zusätzlich verhüten bis …“ mit dem Text der passenden Regel. Die Regeln gelten entweder **je Blisterwoche** (Woche 1, 2, 3) oder **je Tablettennummer** für mehrphasige Pillen wie Quelecia oder Qlaira (z. B. Tablette 1–17, 18–24, 25–26, jeweils so, wie die Tabelle im Beipackzettel es angibt). Optional eigene Regel für mehrere vergessene Pillen im selben Blister.
+- **Vorzeitig neuer Blister:** Verlangt der Beipackzettel „aktuellen Blister verwerfen und sofort einen neuen beginnen“, einfach den neuen Start über `date.<name>_pill_blister_start` bzw. `start_blister` setzen. Der alte Blister bleibt im Tagebuch mit seinen Pillennummern erhalten, der Hinweis zur vergessenen Pille bleibt bestehen. Gibt es im laufenden Blister vor dem neuen Starttag noch keine Einträge, gilt das als Korrektur und ersetzt den alten Start.
 - **Erbrechen, Durchfall & Co.:** Frei einrichtbare Ereignisse. Liegt eines innerhalb der eingestellten Stunden nach einer Einnahme, gibt es zuerst den Hinweis „Ersatzpille bis … möglich“; ohne Ersatzpille gilt die Regel für eine vergessene Pille oder eine eigene.
 - **Zeitraum eines Hinweises:** ab der nachgeholten Einnahme bzw. ab der vergessenen Einnahmezeit bzw. ab dem Ereignis, für die eingestellte Anzahl Tage.
+
+### Beispiel: Quelecia / Qlaira (26 + 2, durchgehend)
+
+Einnahmetage **28**, Pausentage **0**, Placebotabletten **2**, Regeln **je Tablettennummer**. Die Bereiche, Tage und Texte stehen in der Tabelle „Pille vergessen“ des Beipackzettels und werden von dort übernommen; vorbelegt ist nichts.
 
 ## Entitäten
 
 | Entität | Bedeutung |
 |---|---|
 | `sensor.<name>_pill_status` | `later` / `due` / `overdue` (gestern noch offen, Fenster läuft) / `done` / `pause` / `last_pause_day`; Attribute für die Karte (Tage, Hinweise, offene Einnahme, …) |
-| `sensor.<name>_pill_pill_number` | Pille 1–21, in der Pause leer |
+| `sensor.<name>_pill_pill_number` | Pille 1–21 (bzw. 1–28), in der Pause leer |
 | `sensor.<name>_pill_missing_entries` | Tage im aktuellen Blister ohne Eintrag |
 | `sensor.<name>_pill_last_taken` | Letzte Einnahme |
 | `sensor.<name>_pill_notice_until` | Ende des längsten aktiven Hinweises |
@@ -49,7 +55,7 @@ entity: sensor.<name>_pill_status
 settings_hash: "#pille-einstellungen"  # optional: Zahnrad öffnet ein Popup
 ```
 
-Antippen einer Pille öffnet den Tag: Uhrzeit und Pünktlichkeit, Uhrzeit ändern, nachtragen, entfernen, Erbrechen/Durchfall melden. Das Blister-Layout lässt sich mit `columns` anpassen.
+Antippen einer Pille öffnet den Tag: Uhrzeit und Pünktlichkeit, Uhrzeit ändern, nachtragen, entfernen, Erbrechen/Durchfall melden. Das Blister-Layout lässt sich mit `columns` anpassen (Standard: eine Reihe je 7 Pillen, also 4 bei 28). Placebotabletten werden weiß dargestellt.
 
 ## Entwicklung
 

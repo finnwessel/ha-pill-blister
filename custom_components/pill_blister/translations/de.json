@@ -11,6 +11,7 @@
           "person": "Person (optional)",
           "cycle_on": "Einnahmetage",
           "cycle_off": "Pausentage",
+          "placebo": "Placebotabletten",
           "window_before": "Fenster vor der Einnahmezeit",
           "window_after": "Fenster nach der Einnahmezeit",
           "on_time": "Pünktlich bis"
@@ -22,7 +23,9 @@
           "person": "Wird in Events mitgegeben, z. B. für Benachrichtigungen.",
           "window_before": "So viel früher zählt eine Einnahme noch für diesen Tag.",
           "window_after": "So viel später zählt eine Einnahme noch für diesen Tag, auch nach Mitternacht. Außerhalb jedes Fensters wird gefragt, zu welchem Tag sie gehört.",
-          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige)."
+          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige).",
+          "cycle_off": "0 bei durchgehender Einnahme (z. B. 28 Tabletten ohne Pause).",
+          "placebo": "Wirkstofffreie Tabletten am Ende der Einnahmetage (z. B. 2 bei 26 + 2). Werden eingetragen, lösen aber keinen Hinweis aus."
         }
       },
       "missed": {
@@ -30,21 +33,45 @@
         "description": "Bitte die Angaben aus dem Beipackzettel eintragen. Nichts ist vorbelegt: Die Integration zeigt nur Hinweise auf Basis dieser Regeln und behauptet nie, dass Schutz besteht.",
         "data": {
           "missed_after": "Vergessen ab",
-          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
-          "week1_text": "Woche 1: was zu tun ist",
-          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
-          "week2_text": "Woche 2: was zu tun ist",
-          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
-          "week3_text": "Woche 3: was zu tun ist",
+          "rule_mode": "Regeln im Beipackzettel",
           "multi_days": "Mehrere vergessen im selben Blister: zusätzlich verhüten (Tage)",
           "multi_text": "Mehrere vergessen: was zu tun ist"
         },
         "data_description": {
           "missed_after": "Stunden nach der Einnahmezeit, ab denen eine Pille als vergessen gilt (später oder gar nicht).",
+          "rule_mode": "Die meisten Pillen unterscheiden nach Blisterwoche. Mehrphasige Pillen (z. B. Quelecia, Qlaira) nach Tablettennummer, z. B. 1–17, 18–24, 25–26.",
+          "multi_days": "Optional; leer = es gilt die Regel der jeweiligen Pille."
+        }
+      },
+      "weeks": {
+        "title": "Vergessene Pille je Blisterwoche",
+        "description": "Was laut Beipackzettel gilt, wenn in dieser Woche eine Pille vergessen wurde.",
+        "data": {
+          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
+          "week1_text": "Woche 1: was zu tun ist",
+          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
+          "week2_text": "Woche 2: was zu tun ist",
+          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
+          "week3_text": "Woche 3: was zu tun ist"
+        },
+        "data_description": {
           "week1_days": "0 = kein Hinweis.",
           "week2_days": "0 = kein Hinweis.",
-          "week3_days": "0 = kein Hinweis.",
-          "multi_days": "Optional; leer = es gilt die Wochenregel."
+          "week3_days": "0 = kein Hinweis."
+        }
+      },
+      "phase": {
+        "title": "Vergessene Pille je Tablettennummer",
+        "description": "Ein Bereich aus der Tabelle im Beipackzettel, z. B. Tablette 1–17. Danach wird nach dem nächsten gefragt, bis alle Wirkstofftabletten 1–{active} abgedeckt sind.\n\nNoch ohne Regel: **{missing}**\nPlacebotabletten (keine Regel nötig): {placebo}",
+        "data": {
+          "from_pill": "Von Tablette",
+          "to_pill": "Bis Tablette",
+          "backup_days": "Zusätzlich verhüten (Tage)",
+          "text": "Was zu tun ist"
+        },
+        "data_description": {
+          "backup_days": "0 = kein Hinweis (z. B. „keine zusätzlichen Maßnahmen erforderlich“).",
+          "text": "z. B. „Aktuellen Blister verwerfen und sofort mit Tablette 1 eines neuen beginnen“. Den neuen Blister dann über „Blisterstart“ setzen."
         }
       },
       "illness": {
@@ -69,7 +96,11 @@
     },
     "error": {
       "window_too_long": "Fenster davor und danach zusammen müssen kürzer als 24 Stunden sein.",
-      "required": "Pflichtfeld."
+      "required": "Pflichtfeld.",
+      "placebo_too_many": "Es muss mindestens eine wirkstoffhaltige Tablette geben.",
+      "phase_order": "„Bis“ muss mindestens „Von“ sein.",
+      "phase_range": "Nur Wirkstofftabletten 1–{active}.",
+      "phase_overlap": "Überschneidet sich mit einem schon eingetragenen Bereich."
     },
     "abort": {
       "already_configured": "Diese Person ist schon eingerichtet."
@@ -93,6 +124,7 @@
           "person": "Person (optional)",
           "cycle_on": "Einnahmetage",
           "cycle_off": "Pausentage",
+          "placebo": "Placebotabletten",
           "window_before": "Fenster vor der Einnahmezeit",
           "window_after": "Fenster nach der Einnahmezeit",
           "on_time": "Pünktlich bis"
@@ -101,7 +133,9 @@
           "person": "Wird in Events mitgegeben, z. B. für Benachrichtigungen.",
           "window_before": "So viel früher zählt eine Einnahme noch für diesen Tag.",
           "window_after": "So viel später zählt eine Einnahme noch für diesen Tag, auch nach Mitternacht. Außerhalb jedes Fensters wird gefragt, zu welchem Tag sie gehört.",
-          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige)."
+          "on_time": "Abweichung, die noch als pünktlich gilt (nur Anzeige).",
+          "cycle_off": "0 bei durchgehender Einnahme (z. B. 28 Tabletten ohne Pause).",
+          "placebo": "Wirkstofffreie Tabletten am Ende der Einnahmetage (z. B. 2 bei 26 + 2). Werden eingetragen, lösen aber keinen Hinweis aus."
         }
       },
       "missed": {
@@ -109,21 +143,45 @@
         "description": "Bitte die Angaben aus dem Beipackzettel eintragen. Nichts ist vorbelegt: Die Integration zeigt nur Hinweise auf Basis dieser Regeln und behauptet nie, dass Schutz besteht.",
         "data": {
           "missed_after": "Vergessen ab",
-          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
-          "week1_text": "Woche 1: was zu tun ist",
-          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
-          "week2_text": "Woche 2: was zu tun ist",
-          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
-          "week3_text": "Woche 3: was zu tun ist",
+          "rule_mode": "Regeln im Beipackzettel",
           "multi_days": "Mehrere vergessen im selben Blister: zusätzlich verhüten (Tage)",
           "multi_text": "Mehrere vergessen: was zu tun ist"
         },
         "data_description": {
           "missed_after": "Stunden nach der Einnahmezeit, ab denen eine Pille als vergessen gilt (später oder gar nicht).",
+          "rule_mode": "Die meisten Pillen unterscheiden nach Blisterwoche. Mehrphasige Pillen (z. B. Quelecia, Qlaira) nach Tablettennummer, z. B. 1–17, 18–24, 25–26.",
+          "multi_days": "Optional; leer = es gilt die Regel der jeweiligen Pille."
+        }
+      },
+      "weeks": {
+        "title": "Vergessene Pille je Blisterwoche",
+        "description": "Was laut Beipackzettel gilt, wenn in dieser Woche eine Pille vergessen wurde.",
+        "data": {
+          "week1_days": "Woche 1: zusätzlich verhüten (Tage)",
+          "week1_text": "Woche 1: was zu tun ist",
+          "week2_days": "Woche 2: zusätzlich verhüten (Tage)",
+          "week2_text": "Woche 2: was zu tun ist",
+          "week3_days": "Woche 3: zusätzlich verhüten (Tage)",
+          "week3_text": "Woche 3: was zu tun ist"
+        },
+        "data_description": {
           "week1_days": "0 = kein Hinweis.",
           "week2_days": "0 = kein Hinweis.",
-          "week3_days": "0 = kein Hinweis.",
-          "multi_days": "Optional; leer = es gilt die Wochenregel."
+          "week3_days": "0 = kein Hinweis."
+        }
+      },
+      "phase": {
+        "title": "Vergessene Pille je Tablettennummer",
+        "description": "Ein Bereich aus der Tabelle im Beipackzettel, z. B. Tablette 1–17. Danach wird nach dem nächsten gefragt, bis alle Wirkstofftabletten 1–{active} abgedeckt sind.\n\nNoch ohne Regel: **{missing}**\nPlacebotabletten (keine Regel nötig): {placebo}",
+        "data": {
+          "from_pill": "Von Tablette",
+          "to_pill": "Bis Tablette",
+          "backup_days": "Zusätzlich verhüten (Tage)",
+          "text": "Was zu tun ist"
+        },
+        "data_description": {
+          "backup_days": "0 = kein Hinweis (z. B. „keine zusätzlichen Maßnahmen erforderlich“).",
+          "text": "z. B. „Aktuellen Blister verwerfen und sofort mit Tablette 1 eines neuen beginnen“. Den neuen Blister dann über „Blisterstart“ setzen."
         }
       },
       "add_illness": {
@@ -153,7 +211,11 @@
     },
     "error": {
       "window_too_long": "Fenster davor und danach zusammen müssen kürzer als 24 Stunden sein.",
-      "required": "Pflichtfeld."
+      "required": "Pflichtfeld.",
+      "placebo_too_many": "Es muss mindestens eine wirkstoffhaltige Tablette geben.",
+      "phase_order": "„Bis“ muss mindestens „Von“ sein.",
+      "phase_range": "Nur Wirkstofftabletten 1–{active}.",
+      "phase_overlap": "Überschneidet sich mit einem schon eingetragenen Bereich."
     }
   },
   "selector": {
@@ -162,6 +224,12 @@
         "as_missed": "Wie vergessene Pille behandeln",
         "until_cycle_end": "Zusätzlich verhüten für den Rest des Zyklus",
         "own_rule": "Eigene Regel"
+      }
+    },
+    "rule_mode": {
+      "options": {
+        "weeks": "Je Blisterwoche (Woche 1, 2, 3)",
+        "pills": "Je Tablettennummer (mehrphasige Pille)"
       }
     }
   },

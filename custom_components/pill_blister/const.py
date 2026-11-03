@@ -16,7 +16,9 @@ CONF_WINDOW_BEFORE = "window_before"  # hours
 CONF_WINDOW_AFTER = "window_after"  # hours
 CONF_ON_TIME = "on_time"  # minutes
 CONF_MISSED_AFTER = "missed_after"  # hours
-CONF_MISSED_RULES = "missed_rules"  # list of {backup_days, text}, week 1..3
+CONF_MISSED_RULES = "missed_rules"  # week 1..3 or pill ranges, see CONF_RULE_MODE
+CONF_RULE_MODE = "rule_mode"  # missed-pill rules per blister week or per pill range
+CONF_PLACEBO = "placebo"  # last N pills without active ingredient
 CONF_MULTI_MISSED = "multi_missed"  # {backup_days, text} or None
 CONF_ILLNESSES = "illnesses"  # list of illness rules
 
@@ -24,6 +26,8 @@ CONF_WEEK_DAYS = "week{}_days"
 CONF_WEEK_TEXT = "week{}_text"
 CONF_MULTI_DAYS = "multi_days"
 CONF_MULTI_TEXT = "multi_text"
+CONF_FROM_PILL = "from_pill"
+CONF_TO_PILL = "to_pill"
 CONF_ILL_NAME = "illness_name"
 CONF_ILL_WITHIN = "within_hours"
 CONF_ILL_REPLACEMENT = "replacement_hours"
@@ -37,11 +41,15 @@ OUTCOME_AS_MISSED = "as_missed"
 OUTCOME_OWN = "own_rule"
 OUTCOME_CYCLE_END = "until_cycle_end"
 
+RULE_MODE_WEEKS = "weeks"
+RULE_MODE_PILLS = "pills"
+
 WEEKS = 3
 
 DEFAULT_CYCLE_ON = 21
 DEFAULT_CYCLE_OFF = 7
 DEFAULT_ON_TIME = 60
+DEFAULT_PLACEBO = 0
 
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 ATTR_DATE = "date"

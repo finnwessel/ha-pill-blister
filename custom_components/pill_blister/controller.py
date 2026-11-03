@@ -25,6 +25,7 @@ from .const import (
     CONF_NAME,
     CONF_ON_TIME,
     CONF_PERSON,
+    CONF_PLACEBO,
     CONF_WINDOW_AFTER,
     CONF_WINDOW_BEFORE,
     DEFAULT_ON_TIME,
@@ -65,6 +66,7 @@ def build_params(hass: HomeAssistant, options: dict[str, Any]) -> Params:
         missed_rules=rules,  # type: ignore[arg-type]
         multi_missed=MissedRule.from_dict(options.get(CONF_MULTI_MISSED)),
         illnesses=tuple(IllnessRule.from_dict(r) for r in options.get(CONF_ILLNESSES) or []),
+        placebo=int(options.get(CONF_PLACEBO) or 0),
     )
 
 

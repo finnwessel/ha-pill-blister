@@ -6,15 +6,13 @@
  * entity: sensor.<name>_pill_status
  * settings_hash: '#pille-einstellungen'   # optional, opens a popup via the gear
  * columns: [[6,5,4,3,2,1,0],[0,1,2,3,4,5,6],[6,5,4,3,2,1,0]]   # optional blister layout (0 = Monday)
+ *   default: one column per 7 pills (3 for 21, 4 for 28), alternating direction
  */
 
 const WD = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
 const WD_LANG = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const DEFAULT_COLUMNS = [
-  [6, 5, 4, 3, 2, 1, 0],
-  [0, 1, 2, 3, 4, 5, 6],
-  [6, 5, 4, 3, 2, 1, 0],
-];
+const defaultColumns = (pills) => Array.from({ length: Math.max(1, Math.ceil(pills / 7)) },
+  (_, c) => (c % 2 ? [0, 1, 2, 3, 4, 5, 6] : [6, 5, 4, 3, 2, 1, 0]));
 const UNDO_MS = 8000;
 const DOMAIN = 'pill_blister';
 
@@ -42,7 +40,7 @@ const PUNCT = { on_time: 'pünktlich', late: 'später', early: 'früher', missed
 class PillBlisterCard extends HTMLElement {
   setConfig(config) {
     if (!config.entity) throw new Error('entity ist erforderlich (sensor.<name>_pill_status)');
-    this._config = { columns: DEFAULT_COLUMNS, settings_hash: null, ...config };
+    this._config = { columns: null, settings_hash: null, ...config };
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
     this._key = null;
     if (this._hass) this._render();
@@ -98,7 +96,9 @@ class PillBlisterCard extends HTMLElement {
       case 'done': {
         const t = a.taken_at ? ` um ${hm(new Date(a.taken_at))}` : '';
         const p = a.punctuality && a.punctuality !== 'on_time' && a.punctuality !== 'unknown' ? ` (${PUNCT[a.punctuality]})` : '';
-        const tomorrow = a.pill_number >= a.cycle_on ? 'ab morgen Pause' : `morgen ${WD_LANG[(wdIdx(parseDay(a.today)) + 1) % 7]}`;
+        const tm = parseDay(a.today); tm.setDate(tm.getDate() + 1);
+        const tomorrow = a.cycle_off && a.pill_number >= a.cycle_on ? 'ab morgen Pause'
+          : dayKey(tm) === a.next_blister ? 'morgen neuer Blister' : `morgen ${WD_LANG[wdIdx(tm)]}`;
         return { color: 'green', icon: 'mdi:check-circle', title: 'Erledigt für heute', sub: `${pill}${t}${p} · ${tomorrow}` };
       }
       case 'pause': {
@@ -166,7 +166,7 @@ class PillBlisterCard extends HTMLElement {
     const a = this._a;
     const days = a.days || [];
     if (!days.length) return '';
-    const cols = this._config.columns;
+    const cols = this._config.columns || defaultColumns(days.length);
     const rows = cols[0].length;
     const startWd = days[0].weekday;
     const pause = a.status === 'pause' || a.status === 'last_pause_day';
@@ -191,10 +191,11 @@ class PillBlisterCard extends HTMLElement {
           case 'open': cls = `pill today${isOverdue ? ' overdue' : ''}`; break;
           default: cls = 'pill';
         }
+        if (d.placebo && cls.startsWith('pill')) cls += ' placebo';
         if (d.events && d.events.length) inner += '<span class="dot"></span>';
         const label = isToday || isOverdue;
         cells += `<span class="lbl${label ? ' lbl-today' : ''}" style="grid-column:${c * 2 + 1};grid-row:${r + 2}">${WD[w]}</span>`
-          + `<button class="${cls}" style="grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[w]}, Pille ${d.pill}">${inner}</button>`;
+          + `<button class="${cls}" style="grid-column:${c * 2 + 2};grid-row:${r + 2}" data-day="${d.date}" aria-label="${WD[w]}, Pille ${d.pill}${d.placebo ? ', Placebo' : ''}">${inner}</button>`;
       });
     });
     let bends = '';
@@ -215,6 +216,7 @@ class PillBlisterCard extends HTMLElement {
     const missing = (a.missing || []).length;
     let cycle;
     if (s === 'pause' || s === 'last_pause_day') cycle = `Blister vom ${fmtDay(parseDay(a.blister_start))} · neuer Blister ${fmtDay(parseDay(a.next_blister))}`;
+    else if (!a.cycle_off) cycle = `Einnahme Tag ${a.cycle_day} von ${a.cycle_on} · neuer Blister ${fmtDay(parseDay(a.next_blister))}`;
     else cycle = `Einnahme Tag ${a.cycle_day} von ${a.cycle_on} · Pause ab ${fmtDay(parseDay(a.pause_start))}`;
     if (missing) cycle = `<span class="warn">${missing === 1 ? '1 Tag' : `${missing} Tage`} ohne Eintrag · antippen zum Nachtragen</span>`;
 
@@ -338,7 +340,7 @@ class PillBlisterCard extends HTMLElement {
     }
 
     this._showSheet(`
-      <div class="sh-head"><div><div class="sh-title">${title}</div><div class="sh-sub">Pille ${d.pill} von ${a.cycle_on}</div></div>
+      <div class="sh-head"><div><div class="sh-title">${title}</div><div class="sh-sub">Pille ${d.pill} von ${a.cycle_on}${d.placebo ? ' · Placebo' : ''}</div></div>
         <button class="x" aria-label="Schließen"><ha-icon icon="mdi:close"></ha-icon></button></div>
       <div class="status ${status.cls}"><ha-icon icon="${status.icon}"></ha-icon><span>${esc(status.text)}</span></div>
       ${body}`, (act, sheet, btn) => this._dayAction(act, sheet, dateStr, btn));
@@ -460,6 +462,7 @@ PillBlisterCard.styles = `
     display: flex; align-items: center; justify-content: center; cursor: pointer; }
   .foil .pill { background: var(--pill); box-shadow: inset 0 -2px 0 color-mix(in srgb, #000 12%, transparent); }
   .foil .empty { background: color-mix(in srgb, #000 22%, var(--foil)); border: 1.5px dashed color-mix(in srgb, var(--primary-text-color) 30%, transparent); }
+  .foil .pill.placebo { background: #f5f5f2; }
   .foil .untracked { opacity: .55; }
   .foil .late { border-color: var(--orange-color, #ff9800); }
   .foil .missing { box-shadow: 0 0 0 2.5px var(--foil), 0 0 0 4.5px var(--orange-color, #ff9800); }

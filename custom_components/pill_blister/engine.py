@@ -10,6 +10,12 @@ dose time     Planned intake time on a dose day (e.g. 20:00).
 window        [dose - window_before, dose + window_after]: an intake in this range
               belongs to that dose day, also across midnight.
 deadline      dose + missed_after: later (or never) counts as a missed pill.
+placebo       The last ``placebo`` pills of the dose days contain no active ingredient
+              (e.g. 26 + 2): they are tracked, but a missed or vomited one causes no notice.
+missed rule   Either one per blister week (week 1, 2, 3+) or one per range of pill
+              numbers (e.g. pills 1-17, 18-24) for multiphasic pills like Quelecia/Qlaira.
+blister start The day of pill 1. Earlier starts are kept, so an early new blister (e.g.
+              "discard the pack and start a new one") does not renumber the old one.
 notice        A warning that protection may be reduced, derived only from the rules the
               user entered from the package leaflet. The engine never states "protected".
 """
@@ -35,12 +41,23 @@ class MissedRule:
 
     backup_days: float
     text: str = ""
+    from_pill: int | None = None  # with to_pill: rule for a range of pill numbers
+    to_pill: int | None = None
 
     @classmethod
     def from_dict(cls, d: dict[str, Any] | None) -> MissedRule | None:
         if not d:
             return None
-        return cls(backup_days=float(d.get("backup_days", 0)), text=str(d.get("text") or ""))
+        has_range = d.get("from_pill") is not None and d.get("to_pill") is not None
+        return cls(
+            backup_days=float(d.get("backup_days", 0)),
+            text=str(d.get("text") or ""),
+            from_pill=int(d["from_pill"]) if has_range else None,
+            to_pill=int(d["to_pill"]) if has_range else None,
+        )
+
+    def covers(self, pill: int) -> bool:
+        return self.from_pill is not None and self.from_pill <= pill <= (self.to_pill or 0)
 
 
 @dataclass(frozen=True)
@@ -79,13 +96,23 @@ class Params:
     window_after: timedelta
     on_time: timedelta
     missed_after: timedelta
-    missed_rules: tuple[MissedRule, ...]  # index 0 = week 1, last one also for later weeks
+    # Per week (index 0 = week 1, last one also for later weeks) or per pill range.
+    missed_rules: tuple[MissedRule, ...]
     multi_missed: MissedRule | None = None
     illnesses: tuple[IllnessRule, ...] = ()
+    placebo: int = 0  # last N pills of the dose days without active ingredient
 
     @property
     def cycle_len(self) -> int:
         return self.cycle_on + self.cycle_off
+
+    @property
+    def active_pills(self) -> int:
+        return self.cycle_on - self.placebo
+
+    @property
+    def per_pill(self) -> bool:
+        return any(r.from_pill is not None for r in self.missed_rules)
 
     def illness(self, key: str) -> IllnessRule | None:
         return next((r for r in self.illnesses if r.key == key), None)
@@ -168,10 +195,16 @@ class Journal:
     entries: dict[date, Entry] = field(default_factory=dict)
     events: list[Event] = field(default_factory=list)
     pending: Pending | None = None
+    previous_starts: list[date] = field(default_factory=list)  # earlier blister starts
+
+    @property
+    def starts(self) -> list[date]:
+        return sorted({*self.previous_starts, self.blister_start})
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "blister_start": self.blister_start.isoformat(),
+            "previous_starts": [d.isoformat() for d in sorted(self.previous_starts)],
             "dose_time": self.dose_time.isoformat(timespec="minutes"),
             "tracking_since": self.tracking_since.isoformat(),
             "entries": [e.to_dict() for e in sorted(self.entries.values(), key=lambda e: e.day)],
@@ -189,6 +222,7 @@ class Journal:
             entries={e.day: e for e in entries},
             events=[Event.from_dict(x) for x in d.get("events") or []],
             pending=Pending.from_dict(d["pending"]) if d.get("pending") else None,
+            previous_starts=[date.fromisoformat(x) for x in d.get("previous_starts") or []],
         )
 
 
@@ -261,8 +295,13 @@ class PillBlister:
     def local(self, dt: datetime) -> datetime:
         return dt.astimezone(self.p.tz)
 
+    def _start_ref(self, day: date) -> date:
+        """The latest recorded blister start on or before ``day`` (else the first one)."""
+        starts = self.j.starts
+        return next((s for s in reversed(starts) if s <= day), starts[0])
+
     def cycle_pos(self, day: date) -> int:
-        return (day - self.j.blister_start).days % self.p.cycle_len
+        return (day - self._start_ref(day)).days % self.p.cycle_len
 
     def is_dose_day(self, day: date) -> bool:
         return self.cycle_pos(day) < self.p.cycle_on
@@ -271,11 +310,30 @@ class PillBlister:
         pos = self.cycle_pos(day)
         return pos + 1 if pos < self.p.cycle_on else None
 
+    def is_placebo(self, day: date) -> bool:
+        pill = self.pill_number(day)
+        return pill is not None and pill > self.p.active_pills
+
     def blister_start_for(self, day: date) -> date:
         return day - timedelta(days=self.cycle_pos(day))
 
+    def next_blister_start(self, day: date) -> date:
+        """Pill 1 of the blister after the one containing ``day`` (earlier if restarted)."""
+        regular = self.blister_start_for(day) + timedelta(days=self.p.cycle_len)
+        later = [s for s in self.j.starts if day < s < regular]
+        return later[0] if later else regular
+
     def week_index(self, day: date) -> int:
         return min(self.cycle_pos(day) // 7, len(self.p.missed_rules) - 1)
+
+    def missed_rule(self, day: date) -> MissedRule | None:
+        """The leaflet rule for a missed pill on ``day`` (None: placebo or no rule)."""
+        if self.is_placebo(day):
+            return None
+        if self.p.per_pill:
+            pill = self.pill_number(day) or 0
+            return next((r for r in self.p.missed_rules if r.covers(pill)), None)
+        return self.p.missed_rules[self.week_index(day)]
 
     def dose_dt(self, day: date) -> datetime:
         return datetime.combine(day, self.j.dose_time).replace(tzinfo=self.p.tz)
@@ -402,6 +460,20 @@ class PillBlister:
             raise EngineError("no_entry", day=day.isoformat())
 
     def start_blister(self, day: date) -> None:
+        """Pill 1 of a blister was taken on ``day``.
+
+        Starts on or after ``day`` are replaced. The start of the blister ``day`` falls
+        into is kept if it already has entries before ``day`` (an early new blister, e.g.
+        after a missed pill), and replaced otherwise (a correction).
+        """
+        keep = [s for s in self.j.starts if s < day]
+        if keep:
+            last = keep[-1]
+            if self.blister_start_for(day) == last and not any(
+                last <= d < day for d in self.j.entries
+            ):
+                keep.pop()
+        self.j.previous_starts = keep
         self.j.blister_start = day
 
     def set_dose_time(self, tod: time) -> None:
@@ -439,6 +511,8 @@ class PillBlister:
         limit = self.local(now).date() - timedelta(days=RETENTION_DAYS)
         self.j.entries = {d: e for d, e in self.j.entries.items() if d >= limit}
         self.j.events = [e for e in self.j.events if self.local(e.time).date() >= limit]
+        starts = self.j.starts
+        self.j.previous_starts = [s for i, s in enumerate(starts[:-1]) if starts[i + 1] > limit]
 
     # ---------------------------------------------------------------- notices
 
@@ -454,6 +528,8 @@ class PillBlister:
             if not before:
                 continue
             entry = before[-1]
+            if self.is_placebo(entry.day):
+                continue
             if ev.time - entry.time <= timedelta(hours=rule.within_hours):
                 out.append((ev, entry, rule))
         return out
@@ -465,7 +541,7 @@ class PillBlister:
         start_day = max(today - timedelta(days=SCAN_DAYS), self.j.tracking_since)
         d = start_day
         while d <= today:
-            if self.is_dose_day(d):
+            if self.is_dose_day(d) and not self.is_placebo(d):
                 entry = self.j.entries.get(d)
                 deadline = self.deadline(d)
                 anchor: datetime | None = None
@@ -477,7 +553,7 @@ class PillBlister:
                 if anchor is not None:
                     blister = self.blister_start_for(d)
                     missed_per_blister[blister] = missed_per_blister.get(blister, 0) + 1
-                    rule = self.p.missed_rules[self.week_index(d)]
+                    rule = self.missed_rule(d)
                     if missed_per_blister[blister] > 1 and self.p.multi_missed:
                         rule = self.p.multi_missed
                     pill = self.pill_number(d) or 0
@@ -485,7 +561,7 @@ class PillBlister:
                         reason = f"Pille {pill} nicht eingenommen"
                     else:
                         reason = f"Pille {pill} {_hours(self.deviation(d, entry.time))} zu spät"  # type: ignore[union-attr]
-                    if rule.backup_days > 0:
+                    if rule is not None and rule.backup_days > 0:
                         out.append(
                             Notice(
                                 id=f"{kind}-{d.isoformat()}",
@@ -530,12 +606,13 @@ class PillBlister:
                 continue
             if rule.until_cycle_end:
                 # Until pill 1 of the next blister (remaining days of the cycle incl. pause).
-                next_start = self.blister_start_for(entry.day) + timedelta(days=self.p.cycle_len)
-                end = self.dose_dt(next_start)
+                end = self.dose_dt(self.next_blister_start(entry.day))
                 text = rule.text
             else:
                 if rule.as_missed:
-                    mrule = self.p.missed_rules[self.week_index(entry.day)]
+                    mrule = self.missed_rule(entry.day)
+                    if mrule is None:
+                        continue
                     days, text = mrule.backup_days, mrule.text or rule.text
                 else:
                     days, text = rule.backup_days, rule.text
@@ -619,6 +696,8 @@ class PillBlister:
                 "pill": k + 1,
                 "weekday": d.weekday(),
             }
+            if k >= self.p.active_pills:
+                item["placebo"] = True
             if entry is not None:
                 item["state"] = "taken"
                 item["time"] = self.local(entry.time).isoformat() if entry.time else None
@@ -660,9 +739,10 @@ class PillBlister:
             "cycle_day": pos + 1,
             "cycle_on": self.p.cycle_on,
             "cycle_off": self.p.cycle_off,
+            "placebo": self.p.placebo,
             "blister_start": start.isoformat(),
             "pause_start": (start + timedelta(days=self.p.cycle_on)).isoformat(),
-            "next_blister": (start + timedelta(days=self.p.cycle_len)).isoformat(),
+            "next_blister": self.next_blister_start(today).isoformat(),
             "dose_time": self.j.dose_time.isoformat(timespec="minutes"),
             "dose_today": dose_today.isoformat() if self.is_dose_day(today) else None,
             "window_start": self.window(today)[0].isoformat() if self.is_dose_day(today) else None,
