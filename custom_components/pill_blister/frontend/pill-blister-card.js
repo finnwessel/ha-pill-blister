@@ -142,18 +142,20 @@ class PillBlisterCard extends HTMLElement {
       const n = replacement[0];
       html += `<div class="banner action"><ha-icon icon="mdi:pill-multiple"></ha-icon><div>
         <div class="b-title">Ersatzpille bis ${fmtWhen(n.end)} möglich</div>
-        <div class="b-sub">${esc(n.reason)}</div>
-        ${n.text ? `<div class="b-text">${esc(n.text)}</div>` : ''}
+        <div class="b-sub">${esc(String(n.reason).split(' · ')[0])}</div>
         <button class="b-btn" data-act="replacement">Ersatzpille eintragen</button></div></div>`;
     }
     if (reduce.length) {
       const until = new Date(Math.max(...reduce.map((n) => new Date(n.end))));
-      const texts = [...new Set(reduce.map((n) => n.text).filter(Boolean))];
+      // texts of event notices live in the expanded event; others (missed/late pill) stay here
+      const evNotice = [...reduce].reverse().find((n) => n.kind === 'illness');
+      const texts = [...new Set(reduce.filter((n) => n.kind !== 'illness').map((n) => n.text).filter(Boolean))];
       html += `<div class="banner warn"><ha-icon icon="mdi:shield-alert"></ha-icon><div>
         <div class="b-title">Zusätzlich verhüten bis ${fmtDay(until)} ${hm(until)}</div>
         <div class="b-sub">${reduce.map((n) => esc(n.reason)).join(' · ')}</div>
         ${texts.map((t) => `<div class="b-text">${esc(t)}</div>`).join('')}
-        <div class="b-foot">Regeln laut Beipackzettel · im Zweifel Ärztin oder Apotheke fragen</div></div></div>`;
+        ${evNotice ? `<button class="b-btn ghost" data-act="notice-details" data-id="${esc(evNotice.id)}" data-day="${esc(evNotice.day)}">Details</button>` : ''}
+        ${texts.length ? '<div class="b-foot">Regeln laut Beipackzettel · im Zweifel Ärztin oder Apotheke fragen</div>' : ''}</div></div>`;
     }
     return html;
   }
@@ -283,22 +285,24 @@ class PillBlisterCard extends HTMLElement {
     const take = root.querySelector('.take'); if (take) take.addEventListener('click', () => this._take());
     const undo = root.querySelector('.undo'); if (undo) undo.addEventListener('click', () => this._undo());
     const gear = root.querySelector('.gear'); if (gear) gear.addEventListener('click', () => this._openSettings());
-    root.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => this._bannerAction(b.dataset.act, b.dataset.day)));
+    root.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => this._bannerAction(b.dataset.act, b.dataset.day, b)));
   }
 
-  async _bannerAction(act, day) {
+  _openEventSheet(day, eventId) {
+    this._openDay(day);
+    this._openEvent = eventId;
+    this._openDay(day);
+  }
+
+  async _bannerAction(act, day, btn) {
     try {
+      if (act === 'notice-details') { this._openEventSheet(day, btn.dataset.id.replace(/^illness-/, '')); return; }
       if (act === 'assign') await this._call('assign_intake', { date: day });
       else if (act === 'discard') await this._call('assign_intake', { discard: true });
       else if (act === 'replacement') {
         // open the affected day with the event expanded, so the time can be set
         const ev = [...(this._a.events || [])].reverse().find((e) => e.state === 'replacement_open');
-        if (ev) {
-          this._openDay(ev.day);
-          this._openEvent = ev.id;
-          this._openDay(ev.day);
-          return;
-        }
+        if (ev) { this._openEventSheet(ev.day, ev.id); return; }
         await this._call('mark_replacement');
       }
       this._haptic('success');
@@ -343,7 +347,7 @@ class PillBlisterCard extends HTMLElement {
   _openDay(dateStr) {
     const a = this._a; const d = this._dayInfo(dateStr);
     if (!d) return;
-    if (this._openDayKey !== dateStr) { this._haptic('light'); this._openEvent = null; }
+    if (this._openDayKey !== dateStr) { this._haptic('light'); this._openEvent = null; this._reportOpen = false; }
     this._openDayKey = dateStr;
     const date = parseDay(dateStr);
     const title = `${WD[wdIdx(date)]} · ${date.getDate()}.${date.getMonth() + 1}.`;
@@ -432,7 +436,8 @@ class PillBlisterCard extends HTMLElement {
                 ${notice.text ? `<p class="rule">${esc(notice.text)}</p>` : ''}
                 <p class="foot">Regeln laut Beipackzettel · im Zweifel Ärztin oder Apotheke fragen</p>`;
             } else {
-              detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>` : ''}`;
+              detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>
+                <p class="foot">Regeln laut Beipackzettel · im Zweifel Ärztin oder Apotheke fragen</p>` : ''}`;
             }
             if (st === 'replacement_open') {
               const nowV = `${dayKey(new Date())}T${hm(new Date())}`;
@@ -450,9 +455,15 @@ class PillBlisterCard extends HTMLElement {
       }).join('')}`;
     }
     if (types.length && d.time) {
-      html += `<div class="sec">Danach Erbrechen, Durchfall o. Ä.?</div>
-        <label class="row"><span>Wann</span><input type="datetime-local" class="evtime" value="${dayKey(new Date())}T${hm(new Date())}"></label>
-        <div class="btns wrap">${types.map((t) => `<button class="btn" data-act="report" data-type="${esc(t.key)}">${esc(t.name)}</button>`).join('')}</div>`;
+      if (this._reportOpen) {
+        const nowV = `${dayKey(new Date())}T${hm(new Date())}`;
+        html += `<div class="sec">Danach Erbrechen, Durchfall o. Ä.?</div>
+          <label class="row"><span>Wann</span><input type="datetime-local" class="evtime" value="${nowV}" max="${nowV}"></label>
+          <div class="btns wrap">${types.map((t) => `<button class="btn" data-act="report" data-type="${esc(t.key)}">${esc(t.name)} melden</button>`).join('')}
+          <button class="btn ghost" data-act="toggle-report">Abbrechen</button></div>`;
+      } else {
+        html += `<button class="link" data-act="toggle-report"><ha-icon icon="mdi:plus-circle-outline"></ha-icon>Erbrechen, Durchfall o. Ä. melden</button>`;
+      }
     }
     return html;
   }
@@ -472,11 +483,17 @@ class PillBlisterCard extends HTMLElement {
       } else if (act === 'report') {
         const v = sheet.querySelector('.evtime').value; // YYYY-MM-DDTHH:MM
         await this._call('report_event', { type: btn.dataset.type, datetime: `${v.replace('T', ' ')}:00` });
+        this._reportOpen = false;
+        this._openDay(dateStr);
         this._haptic('success');
         return; // keep the dialog open, it refreshes with the notice
       } else if (act === 'remove-event') {
         await this._call('remove_event', { event_id: btn.dataset.id });
         this._openEvent = null;
+        return;
+      } else if (act === 'toggle-report') {
+        this._reportOpen = !this._reportOpen;
+        this._openDay(dateStr);
         return;
       } else if (act === 'toggle-event') {
         this._openEvent = this._openEvent === btn.dataset.id ? null : btn.dataset.id;
@@ -632,6 +649,9 @@ PillBlisterCard.sheetStyles = `
   .evhead .chev { color: var(--secondary-text-color); --mdc-icon-size: 20px; flex: none; }
   .evbody { padding: 0 12px 12px 48px; font-size: 13px; color: var(--primary-text-color); }
   .evbody p { margin: 0 0 8px; }
+  .link { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; margin: 18px 2px 4px; font-size: 14px; color: var(--secondary-text-color); }
+  .link ha-icon { --mdc-icon-size: 20px; }
+  .btn.ghost { background: transparent; color: var(--secondary-text-color); }
   .evbody .warnline { font-weight: 600; color: var(--s); }
   .evbody .foot { font-size: 12px; color: var(--secondary-text-color); }
   .evbody .rule { white-space: pre-line; color: var(--secondary-text-color); }
