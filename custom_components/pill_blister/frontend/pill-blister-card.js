@@ -144,7 +144,7 @@ class PillBlisterCard extends HTMLElement {
         <div class="b-title">Ersatzpille bis ${fmtWhen(n.end)} möglich</div>
         <div class="b-sub">${esc(n.reason)}</div>
         ${n.text ? `<div class="b-text">${esc(n.text)}</div>` : ''}
-        <button class="b-btn" data-act="replacement">Ersatzpille genommen</button></div></div>`;
+        <button class="b-btn" data-act="replacement">Ersatzpille eintragen</button></div></div>`;
     }
     if (reduce.length) {
       const until = new Date(Math.max(...reduce.map((n) => new Date(n.end))));
@@ -290,7 +290,17 @@ class PillBlisterCard extends HTMLElement {
     try {
       if (act === 'assign') await this._call('assign_intake', { date: day });
       else if (act === 'discard') await this._call('assign_intake', { discard: true });
-      else if (act === 'replacement') await this._call('mark_replacement');
+      else if (act === 'replacement') {
+        // open the affected day with the event expanded, so the time can be set
+        const ev = [...(this._a.events || [])].reverse().find((e) => e.state === 'replacement_open');
+        if (ev) {
+          this._openDay(ev.day);
+          this._openEvent = ev.id;
+          this._openDay(ev.day);
+          return;
+        }
+        await this._call('mark_replacement');
+      }
       this._haptic('success');
     } catch (e) { this._toastError(e); }
   }
@@ -415,7 +425,11 @@ class PillBlisterCard extends HTMLElement {
               missed: `${after} Die Pille gilt als vergessen.`,
             }[st] || after;
             detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>` : ''}`;
-            if (st === 'replacement_open') detail += `<div class="btns"><button class="btn primary" data-act="replacement">Ersatzpille genommen</button></div>`;
+            if (st === 'replacement_open') {
+              const nowV = `${dayKey(new Date())}T${hm(new Date())}`;
+              detail += `<label class="row"><span>Wann</span><input type="datetime-local" class="reptime" value="${nowV}" max="${nowV}"></label>
+                <div class="btns"><button class="btn primary" data-act="replacement">Ersatzpille genommen</button></div>`;
+            }
           }
           detail += `<div class="btns"><button class="btn small danger" data-act="remove-event" data-id="${e.id}">Meldung entfernen</button></div>`;
         }
@@ -460,7 +474,8 @@ class PillBlisterCard extends HTMLElement {
         this._openDay(dateStr);
         return;
       } else if (act === 'replacement') {
-        await this._call('mark_replacement');
+        const v = sheet.querySelector('.reptime') && sheet.querySelector('.reptime').value; // YYYY-MM-DDTHH:MM
+        await this._call('mark_replacement', v ? { datetime: `${v.replace('T', ' ')}:00` } : {});
         this._haptic('success');
         return;
       }
