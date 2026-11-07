@@ -424,7 +424,16 @@ class PillBlisterCard extends HTMLElement {
               replaced: `${after} Ersatzpille um ${d.replacement ? hm(new Date(d.replacement)) : '?'} genommen.`,
               missed: `${after} Die Pille gilt als vergessen.`,
             }[st] || after;
-            detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>` : ''}`;
+            // the notice the engine derived from this event (missed-pill rule for "missed")
+            const notice = (a.notices || []).find((n) => n.id === `illness-${e.id}`);
+            if (st === 'missed' && notice) {
+              const end = new Date(notice.end);
+              detail = `<p>${esc(head)}</p><p class="warnline">Zusätzlich verhüten bis ${fmtDay(end)} ${hm(end)}</p>
+                ${notice.text ? `<p class="rule">${esc(notice.text)}</p>` : ''}
+                <p class="foot">Regeln laut Beipackzettel · im Zweifel Ärztin oder Apotheke fragen</p>`;
+            } else {
+              detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>` : ''}`;
+            }
             if (st === 'replacement_open') {
               const nowV = `${dayKey(new Date())}T${hm(new Date())}`;
               detail += `<label class="row"><span>Wann</span><input type="datetime-local" class="reptime" value="${nowV}" max="${nowV}"></label>
@@ -623,6 +632,8 @@ PillBlisterCard.sheetStyles = `
   .evhead .chev { color: var(--secondary-text-color); --mdc-icon-size: 20px; flex: none; }
   .evbody { padding: 0 12px 12px 48px; font-size: 13px; color: var(--primary-text-color); }
   .evbody p { margin: 0 0 8px; }
+  .evbody .warnline { font-weight: 600; color: var(--s); }
+  .evbody .foot { font-size: 12px; color: var(--secondary-text-color); }
   .evbody .rule { white-space: pre-line; color: var(--secondary-text-color); }
   .evbody .btns { margin-top: 8px; }
   .evrow small { display: block; font-size: 12px; color: var(--secondary-text-color); margin-top: 2px; }
