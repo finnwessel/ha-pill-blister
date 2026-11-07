@@ -534,6 +534,22 @@ class PillBlister:
                 out.append((ev, entry, rule))
         return out
 
+    def _event_days(self) -> list[tuple[Event, date, bool]]:
+        """Every event with the day it belongs to and whether it affects that intake.
+
+        An event belongs to the latest timed intake before it, even when it lies outside
+        ``within_hours`` (then it is only shown, without a notice). Events before any
+        intake belong to their own calendar day.
+        """
+        affected = {ev.id for ev, _entry, _rule in self._affected()}
+        timed = sorted((e for e in self.j.entries.values() if e.time), key=lambda e: e.time)
+        out = []
+        for ev in sorted(self.j.events, key=lambda e: e.time):
+            before = [e for e in timed if e.time <= ev.time]
+            day = before[-1].day if before else self.local(ev.time).date()
+            out.append((ev, day, ev.id in affected))
+        return out
+
     def notices(self, now: datetime, include_past: bool = False) -> list[Notice]:
         today = self.local(now).date()
         out: list[Notice] = []
@@ -685,8 +701,8 @@ class PillBlister:
         today = self.local(now).date()
         start = self.blister_start_for(today)
         events_by_day: dict[date, list[str]] = {}
-        for ev, entry, _rule in self._affected():
-            events_by_day.setdefault(entry.day, []).append(ev.id)
+        for ev, day, _relevant in self._event_days():
+            events_by_day.setdefault(day, []).append(ev.id)
         out = []
         for k in range(self.p.cycle_on):
             d = start + timedelta(days=k)
@@ -762,8 +778,14 @@ class PillBlister:
             "notice_until": max(n.end for n in notices).isoformat() if notices else None,
             "pending": self.j.pending.to_dict() if self.j.pending else None,
             "events": [
-                {"id": ev.id, "type": ev.type, "time": self.local(ev.time).isoformat()}
-                for ev in self.j.events
+                {
+                    "id": ev.id,
+                    "type": ev.type,
+                    "time": self.local(ev.time).isoformat(),
+                    "day": day.isoformat(),
+                    "relevant": relevant,
+                }
+                for ev, day, relevant in self._event_days()
                 if self.local(ev.time).date() >= start - timedelta(days=1)
             ],
         }

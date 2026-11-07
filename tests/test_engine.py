@@ -284,6 +284,19 @@ def test_event_outside_effect_window_is_ignored():
     assert e.notices(at(day(11), 3)) == []
 
 
+def test_event_outside_effect_window_is_still_shown():
+    e = make()
+    fill(e, 10)
+    e.report_event(at(day(11), 2), "diarrhoea", at(day(11), 2))  # 6 h after intake
+    days = {d["pill"]: d for d in e.days(at(day(11), 3))}
+    assert days[10].get("events") and "events" not in days.get(11, {})
+    ev = e.snapshot(at(day(11), 3))["events"][0]
+    assert ev["relevant"] is False and ev["day"] == day(10).isoformat()
+    e.report_event(at(day(11), 3), "vomit", at(day(10), 21))  # 1 h after intake
+    evs = {x["type"]: x for x in e.snapshot(at(day(11), 3))["events"]}
+    assert evs["vomit"]["relevant"] is True
+
+
 def test_illness_with_own_rule():
     e = make()
     fill(e, 10)

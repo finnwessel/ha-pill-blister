@@ -38,6 +38,8 @@ const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDa
 const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const wdIdx = (d) => (d.getDay() + 6) % 7;
 const fmtDay = (d) => `${WD_LANG[wdIdx(d)]} ${d.getDate()}.${d.getMonth() + 1}.`;
+const fmtShort = (d) => `${d.getDate()}.${d.getMonth() + 1}.`;
+const fmtNum = (n) => String(n ?? 4).replace('.', ',');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const dur = (min) => {
   const a = Math.abs(Math.round(min)); const h = Math.floor(a / 60); const m = a % 60;
@@ -384,11 +386,17 @@ class PillBlisterCard extends HTMLElement {
     const a = this._a;
     const types = a.event_types || [];
     const evs = (a.events || []).filter((e) => (d.events || []).includes(e.id));
-    const name = (key) => (types.find((t) => t.key === key) || { name: key }).name;
+    const type = (key) => types.find((t) => t.key === key) || { name: key };
+    const when = (e) => (dayKey(new Date(e.time)) === d.date ? hm(new Date(e.time)) : `${fmtShort(new Date(e.time))} ${hm(new Date(e.time))}`);
     let html = '';
     if (evs.length) {
-      html += `<div class="sec">Gemeldet</div>${evs.map((e) => `<div class="evrow"><span>${esc(name(e.type))} · ${hm(new Date(e.time))}</span>
-        <button class="btn small danger" data-act="remove-event" data-id="${e.id}">Entfernen</button></div>`).join('')}`;
+      html += `<div class="sec">Gemeldet</div>${evs.map((e) => {
+        const t = type(e.type);
+        const note = e.relevant === false
+          ? `<small>Mehr als ${fmtNum(t.within_hours)} h nach der Einnahme · kein Hinweis</small>` : '';
+        return `<div class="evrow"><span>${esc(t.name)} · ${when(e)}${note}</span>
+        <button class="btn small danger" data-act="remove-event" data-id="${e.id}">Entfernen</button></div>`;
+      }).join('')}`;
     }
     if (types.length && d.time) {
       html += `<div class="sec">Danach Erbrechen, Durchfall o. Ä.?</div>
@@ -551,6 +559,7 @@ PillBlisterCard.sheetStyles = `
   .or { text-align: center; margin: 12px 0 8px; }
   .sec { font-size: 13px; font-weight: 600; color: var(--secondary-text-color); margin: 18px 2px 8px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px 12px; font-size: 15px; }
+  .evrow small { display: block; font-size: 12px; color: var(--secondary-text-color); margin-top: 2px; }
   .evrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 4px 8px; font-size: 14px; }
   input[type=time], input[type=datetime-local] { font: inherit; font-size: 16px; font-weight: 600; color: var(--primary-text-color); color-scheme: light dark;
     background: color-mix(in srgb, var(--primary-text-color) 7%, transparent); border: 0; border-radius: 10px; padding: 8px 12px; }

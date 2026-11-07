@@ -65,7 +65,12 @@ class StatusSensor(PillEntity, SensorEntity):
         attrs["on_time_min"] = round(c.params.on_time.total_seconds() / 60)
         attrs["missed_after_min"] = round(c.params.missed_after.total_seconds() / 60)
         attrs["event_types"] = [
-            {"key": r.key, "name": r.name, "replacement_hours": r.replacement_hours}
+            {
+                "key": r.key,
+                "name": r.name,
+                "within_hours": r.within_hours,
+                "replacement_hours": r.replacement_hours,
+            }
             for r in c.params.illnesses
         ]
         return attrs
