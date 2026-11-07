@@ -333,7 +333,7 @@ class PillBlisterCard extends HTMLElement {
   _openDay(dateStr) {
     const a = this._a; const d = this._dayInfo(dateStr);
     if (!d) return;
-    if (this._openDayKey !== dateStr) this._haptic('light');
+    if (this._openDayKey !== dateStr) { this._haptic('light'); this._openEvent = null; }
     this._openDayKey = dateStr;
     const date = parseDay(dateStr);
     const title = `${WD[wdIdx(date)]} · ${date.getDate()}.${date.getMonth() + 1}.`;
@@ -390,12 +390,40 @@ class PillBlisterCard extends HTMLElement {
     const when = (e) => (dayKey(new Date(e.time)) === d.date ? hm(new Date(e.time)) : `${fmtShort(new Date(e.time))} ${hm(new Date(e.time))}`);
     let html = '';
     if (evs.length) {
+      const intake = d.time ? new Date(d.time) : null;
       html += `<div class="sec">Gemeldet</div>${evs.map((e) => {
         const t = type(e.type);
-        const note = e.relevant === false
-          ? `<small>Mehr als ${fmtNum(t.within_hours)} h nach der Einnahme · kein Hinweis</small>` : '';
-        return `<div class="evrow"><span>${esc(t.name)} · ${when(e)}${note}</span>
-        <button class="btn small danger" data-act="remove-event" data-id="${e.id}">Entfernen</button></div>`;
+        const st = e.state || (e.relevant === false ? 'ignored' : 'missed');
+        const until = intake && t.replacement_hours ? new Date(intake.getTime() + t.replacement_hours * 3600e3) : null;
+        const untilTxt = until ? (dayKey(until) === d.date ? hm(until) : `${fmtShort(until)} ${hm(until)}`) : '';
+        const look = {
+          ignored: { cls: 'neutral', icon: 'mdi:information-outline', short: 'kein Hinweis' },
+          replacement_open: { cls: 'late', icon: 'mdi:alert', short: `Ersatzpille bis ${untilTxt}` },
+          replaced: { cls: 'ok', icon: 'mdi:check-circle', short: 'Ersatzpille genommen' },
+          missed: { cls: 'bad', icon: 'mdi:alert-circle', short: 'gilt als vergessen' },
+        }[st] || { cls: 'neutral', icon: 'mdi:information-outline', short: '' };
+        const open = this._openEvent === e.id;
+        let detail = '';
+        if (open) {
+          const after = e.after_min != null ? `${dur(e.after_min)} nach der Einnahme${intake ? ` um ${hm(intake)}` : ''}.` : '';
+          if (st === 'ignored') {
+            detail = `<p>${after} Laut Einstellung zählt ${esc(t.name)} nur bis ${fmtNum(t.within_hours)} h nach der Einnahme. Deshalb gibt es keinen Hinweis.</p>`;
+          } else {
+            const head = {
+              replacement_open: `${after} Die Pille wurde evtl. nicht vollständig aufgenommen. Ersatzpille möglich bis ${untilTxt}.`,
+              replaced: `${after} Ersatzpille um ${d.replacement ? hm(new Date(d.replacement)) : '?'} genommen.`,
+              missed: `${after} Die Pille gilt als vergessen.`,
+            }[st] || after;
+            detail = `<p>${esc(head)}</p>${t.text ? `<p class="rule">${esc(t.text)}</p>` : ''}`;
+            if (st === 'replacement_open') detail += `<div class="btns"><button class="btn primary" data-act="replacement">Ersatzpille genommen</button></div>`;
+          }
+          detail += `<div class="btns"><button class="btn small danger" data-act="remove-event" data-id="${e.id}">Meldung entfernen</button></div>`;
+        }
+        return `<div class="ev ${look.cls}${open ? ' open' : ''}">
+          <button class="evhead" data-act="toggle-event" data-id="${e.id}"><ha-icon icon="${look.icon}"></ha-icon>
+            <span><b>${esc(t.name)} · ${when(e)}</b><small>${esc(look.short)}</small></span>
+            <ha-icon class="chev" icon="mdi:chevron-${open ? 'up' : 'down'}"></ha-icon></button>
+          ${open ? `<div class="evbody">${detail}</div>` : ''}</div>`;
       }).join('')}`;
     }
     if (types.length && d.time) {
@@ -425,6 +453,15 @@ class PillBlisterCard extends HTMLElement {
         return; // keep the dialog open, it refreshes with the notice
       } else if (act === 'remove-event') {
         await this._call('remove_event', { event_id: btn.dataset.id });
+        this._openEvent = null;
+        return;
+      } else if (act === 'toggle-event') {
+        this._openEvent = this._openEvent === btn.dataset.id ? null : btn.dataset.id;
+        this._openDay(dateStr);
+        return;
+      } else if (act === 'replacement') {
+        await this._call('mark_replacement');
+        this._haptic('success');
         return;
       }
       this._haptic('success');
@@ -559,6 +596,20 @@ PillBlisterCard.sheetStyles = `
   .or { text-align: center; margin: 12px 0 8px; }
   .sec { font-size: 13px; font-weight: 600; color: var(--secondary-text-color); margin: 18px 2px 8px; }
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px 12px; font-size: 15px; }
+  .ev { --s: var(--secondary-text-color); border-radius: 12px; margin: 0 0 8px; background: color-mix(in srgb, var(--s) 12%, transparent); }
+  .ev.ok { --s: var(--green-color, #4caf50); }
+  .ev.late { --s: var(--orange-color, #ff9800); }
+  .ev.bad { --s: var(--red-color, #f44336); }
+  .evhead { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; }
+  .evhead > ha-icon:first-child { color: var(--s); flex: none; }
+  .evhead span { flex: 1; min-width: 0; font-size: 14px; color: var(--primary-text-color); }
+  .evhead b { font-weight: 600; }
+  .evhead small { display: block; font-size: 12px; color: var(--s); margin-top: 2px; }
+  .evhead .chev { color: var(--secondary-text-color); --mdc-icon-size: 20px; flex: none; }
+  .evbody { padding: 0 12px 12px 48px; font-size: 13px; color: var(--primary-text-color); }
+  .evbody p { margin: 0 0 8px; }
+  .evbody .rule { white-space: pre-line; color: var(--secondary-text-color); }
+  .evbody .btns { margin-top: 8px; }
   .evrow small { display: block; font-size: 12px; color: var(--secondary-text-color); margin-top: 2px; }
   .evrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 4px 8px; font-size: 14px; }
   input[type=time], input[type=datetime-local] { font: inherit; font-size: 16px; font-weight: 600; color: var(--primary-text-color); color-scheme: light dark;

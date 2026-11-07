@@ -535,7 +535,11 @@ class PillBlister:
         return out
 
     def _event_days(self) -> list[tuple[Event, date, bool]]:
-        """Every event with the day it belongs to and whether it affects that intake.
+        """Every event with the day it belongs to and whether it affects that intake."""
+        return [(ev, day, relevant) for ev, day, relevant, _entry in self._event_entries()]
+
+    def _event_entries(self) -> list[tuple[Event, date, bool, Entry | None]]:
+        """Every event with its day, whether it affects that intake, and the intake.
 
         An event belongs to the latest timed intake before it, even when it lies outside
         ``within_hours`` (then it is only shown, without a notice). Events before any
@@ -546,9 +550,22 @@ class PillBlister:
         out = []
         for ev in sorted(self.j.events, key=lambda e: e.time):
             before = [e for e in timed if e.time <= ev.time]
-            day = before[-1].day if before else self.local(ev.time).date()
-            out.append((ev, day, ev.id in affected))
+            entry = before[-1] if before else None
+            day = entry.day if entry else self.local(ev.time).date()
+            out.append((ev, day, ev.id in affected, entry))
         return out
+
+    def event_state(self, now: datetime, ev: Event, relevant: bool, entry: Entry | None) -> str:
+        """``ignored`` (no effect), ``replaced``, ``replacement_open`` or ``missed``."""
+        rule = self.p.illness(ev.type)
+        if not relevant or rule is None or entry is None or entry.time is None:
+            return "ignored"
+        if rule.replacement_hours > 0:
+            if entry.replacement is not None:
+                return "replaced"
+            if now <= entry.time + timedelta(hours=rule.replacement_hours):
+                return "replacement_open"
+        return "missed"
 
     def notices(self, now: datetime, include_past: bool = False) -> list[Notice]:
         today = self.local(now).date()
@@ -784,8 +801,12 @@ class PillBlister:
                     "time": self.local(ev.time).isoformat(),
                     "day": day.isoformat(),
                     "relevant": relevant,
+                    "state": self.event_state(now, ev, relevant, entry),
+                    "after_min": round((ev.time - entry.time).total_seconds() / 60)
+                    if entry and entry.time
+                    else None,
                 }
-                for ev, day, relevant in self._event_days()
+                for ev, day, relevant, entry in self._event_entries()
                 if self.local(ev.time).date() >= start - timedelta(days=1)
             ],
         }

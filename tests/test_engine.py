@@ -486,3 +486,18 @@ def test_until_cycle_end_stops_at_early_new_blister():
     e.start_blister(day(15))
     e.report_event(at(day(10), 21), "x", at(day(10), 21))
     assert e.notices(at(day(10), 22))[0].end == at(day(15), 20)
+
+
+def test_event_state_for_card():
+    e = make()
+    fill(e, 10)
+    e.report_event(at(day(11), 2), "diarrhoea", at(day(11), 2))  # outside
+    e.report_event(at(day(10), 22), "vomit", at(day(10), 22))  # 2 h after intake
+    snap = {x["type"]: x for x in e.snapshot(at(day(11), 3))["events"]}
+    assert snap["diarrhoea"]["state"] == "ignored" and snap["diarrhoea"]["after_min"] == 360
+    assert snap["vomit"]["state"] == "replacement_open" and snap["vomit"]["after_min"] == 120
+    later = {x["type"]: x for x in e.snapshot(at(day(11), 9))["events"]}
+    assert later["vomit"]["state"] == "missed"
+    e.mark_replacement(at(day(11), 3), at(day(11), 3))
+    snap = {x["type"]: x for x in e.snapshot(at(day(11), 4))["events"]}
+    assert snap["vomit"]["state"] == "replaced"

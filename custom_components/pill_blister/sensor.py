@@ -70,6 +70,7 @@ class StatusSensor(PillEntity, SensorEntity):
                 "name": r.name,
                 "within_hours": r.within_hours,
                 "replacement_hours": r.replacement_hours,
+                "text": r.text,
             }
             for r in c.params.illnesses
         ]
